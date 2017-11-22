@@ -1,10 +1,9 @@
 # Set the default behavior, in case people don't have core.autocrlf set.
-*.rb linguist-language=Visual Basic
 * text eol=auto
 *.bas text eol=crlf
 *.frm text eol=crlf
 *.log text eol=crlf
-*.vbp text eol=crlf
+*.vbp text eol=crlf linguist-language=Visual Basic
 *.cls text eol=crlf
 *.vbw text eol=crlf
 *.dsr text eol=crlf
