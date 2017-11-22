@@ -16,7 +16,7 @@ Also included is a binary build of Nginx with a basic configuration to support a
 
 Lastly, I've also bundled Olaf Schmidt's excellent vbRichClient5 library (http://www.vbrichclient.com/), again for the sake of convenience. You can always get the latest version from the vbRichClient5 website.
 
-#Demo Usage
+# Demo Usage
 1. If you don't already have a web server running, start nginx from the command-line by going to the .\VbFcgi\bin\nginx folder and then rnning the nginx.exe command. If you already have a web server running, make sure it is configured to pass *.fcgi requests from the browser upstream to 127.0.0.1 port 9100.
 2. From the command line, start VbFcgiHost.exe with the following command: vbfcgihost.exe /host 127.0.0.1 /port 9100 /spawn 1
 3. Open your browser and go to http://127.0.0.1/test.fcgi - you should see the HTML response from the demo FCGI application.
