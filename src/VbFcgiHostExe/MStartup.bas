@@ -245,7 +245,7 @@ Sub Main()
             ' Create the FCGI listener and start listening on the appropriate host & port
             apiOutputDebugString "Creating FCGI listener on " & l_Host & ":" & l_Port
 
-            Set mo_Fcgi = New vbFcgiLib.CFcgi
+            Set mo_Fcgi = libRc5Factory.RegFree.GetInstanceEx(pathBin & "vbFcgiLib.dll", "CFcgi")
             mo_Fcgi.StartListening l_Host, l_Port
 
             If Not CreateListenerMutex(l_Host, l_Port) Then
