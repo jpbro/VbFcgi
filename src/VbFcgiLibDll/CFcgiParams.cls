@@ -96,6 +96,10 @@ Public Function Exists(ByVal p_Key As String) As Boolean
    Exists = mo_Params.Exists(p_Key)
 End Function
    
+Public Function ExistsByEnum(ByVal p_StandardParameterEnum As VbFcgiLib.e_StandardParameters) As Boolean
+   ExistsByEnum = mo_Params.Exists(EnumParameterKey(p_StandardParameterEnum))
+End Function
+   
 Public Function Count() As Long
    Count = mo_Params.Count
 End Function
