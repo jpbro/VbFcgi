@@ -8,3 +8,5 @@
 *.dca
 *.scc
 *.tmp
+*.pid
+*.log
