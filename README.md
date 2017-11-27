@@ -37,6 +37,6 @@ In order to write your own FCGI application from scratch, you must:
 9. Make a copy of the buuilt DLL and change the extension to .fcgi.
 10. Move the .fcgi file to the same folder as the VbFcgiHost.exe and VbFcgiLib.dll files.
 
-When you subsequently run the VbFcgiHost.exe, it will use your VbFcgiApp.dll as a "plugin" of sorts for responding to FCGI requests.
+When you subsequently run the VbFcgiHost.exe, it will use your .fcgi as a "plugin" (of sorts) for responding to correspondng FCGI requests. For example, typing http://localhost/myapp.fcgi will cause VbFcgiHost to create an instance of the CFcgiApp class from the myapp.fcgi DLL stored in the same folder, and then it will call IFcgiApp_ProcessRequest in that class.
 
 Enjoy!
