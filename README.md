@@ -6,7 +6,7 @@ VbFcgi is a framework that allows you to easily get VB6 code onto the web. It wa
 
 # Included Executables
 There are 3 main components of the VbFcgi framework:
-1. **VbFcgi.dll** - This is the main framework library that includes all of the code for listening and responding to FCGI requests from the web server, as well as parsing out records for FCGI parameters, HTTP cookies, etc... This should be included with every distribution of your FCGI application.
+1. **VbFcgiLib.dll** - This is the main framework library that includes all of the code for listening and responding to FCGI requests from the web server, as well as parsing out records for FCGI parameters, HTTP cookies, etc... This should be included with every distribution of your FCGI application.
 2. **VbFcgiHost.exe** - This is main executable file that will spawn FCGI listeners (multiple listeners support for load balancing) and monitor for terminated listeners that need respawning. It also acts as a shutdown co-ordinator. This should be included with every distribution of your FCGI application.
 3. **VbFcgiApp.dll** - This is the demo FCGI Application code. The version included here is a very basic proof-of-concept that will send an HTML page upstream with a table of the FCGI parameters that were received. The version of this file that is included with this repository should **not** be included when distributing your FCGI application (you should create your own version as described in the *Creating your own FCGI Application* section below).
 
