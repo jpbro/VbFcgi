@@ -22,7 +22,7 @@ Lastly, I've also bundled Olaf Schmidt's excellent vbRichClient5 library (http:/
 3. Open your browser and go to http://127.0.0.1/test.fcgi - you should see the HTML response from the demo FCGI application.
 
 # Creating your own FCGI Application
-You can use the included VbFcgiApp source code as a starting point - all the work is done in the IFcgiApp_BuildResponse method, so give it a thorough review.
+You can use the included VbFcgiApp source code as a starting point - all the work is done in the IFcgiApp_ProcessRequest method, so give it a thorough review.
 
 In order to write your own FCGI application from scratch, you must:
 
@@ -31,9 +31,11 @@ In order to write your own FCGI application from scratch, you must:
 3. Change the name of "Class1" to "CFcgiApp".
 4. Add a reference to VbFcgiLib from the Projects menu > References.
 5. In the General section of the "CFcgiApp" class, type; Implements VbFcgiLib.IFcgiApp
-6. Select "IFcgiApp" from the drop down list in code view. It will create the IFcgiApp_BuildResponse method for you.
-7. Code your app in the IFcgiApp_BuildResponse method (the rest of the f*cking owl).
-8. Build your app, but when prompted for the name of the DLL, call it "VbFcgiApp.dll" and build it next to the VbFcgiHost.exe and VbFcgi.dll files.
+6. Select "IFcgiApp" from the drop down list in code view. It will create the IFcgiApp_ProcessRequest method for you.
+7. Code your app in the IFcgiApp_ProcessRequest method (the rest of the f*cking owl).
+8. Build your DLL app. 
+9. Make a copy of the buuilt DLL and change the extension to .fcgi.
+10. Move the .fcgi file to the same folder as the VbFcgiHost.exe and VbFcgiLib.dll files.
 
 When you subsequently run the VbFcgiHost.exe, it will use your VbFcgiApp.dll as a "plugin" of sorts for responding to FCGI requests.
 
