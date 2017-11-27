@@ -6,7 +6,7 @@ BEGIN
   DataSourceBehavior  = 0  'vbNone
   MTSTransactionMode  = 0  'NotAnMTSObject
 END
-Attribute VB_Name = "IFcgiApp"
+Attribute VB_Name = "CFcgiResponse"
 Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = False
@@ -35,13 +35,37 @@ Option Explicit
 ' OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 ' SOFTWARE.
 
-Public Sub ProcessRequest(po_Request As VbFcgiLib.CFcgiRequest, po_Response As VbFcgiLib.CFcgiResponse)
-   ' This sub is called when an FCG request is received by the CFgiServer class.
+Public Event SendBytes(ByVal p_RequestId As Long, pa_Bytes() As Byte)
+Public Event SendError(ByVal p_RequestId As Long, ByVal p_ErrorNumber As Long, ByVal p_ErrorDescription As String)
+Public Event SendFinished(ByVal p_RequestId As Long)
+
+Private m_RequestId As Long
+Private m_Finished As Boolean
+
+Friend Property Let RequestId(ByVal p_RequestId As Long)
+   m_RequestId = p_RequestId
+End Property
+
+Public Sub WriteBytes(pa_Bytes() As Byte)
+   ' Call this method from your FCGI App to write bytes back to the web server.
+      
+   If m_Finished Then Err.Raise 5, , "FCGI application finished."
    
-   ' The po_Request object holds information received from
-   ' the browser (Http) and web server (Fcgi) that can be queried to build your dynamic web pages.
-   
-   ' The po_Response object should be used by your FCGI application
-   ' to pass data upstream to the web server/browser.
+   RaiseEvent SendBytes(m_RequestId, pa_Bytes)
 End Sub
 
+Public Sub Error(ByVal p_ErrorNumber As Long, ByVal p_ErrorDescription As String)
+   ' Call this method from your FCGI app to send an error back to the web server
+   
+   If m_Finished Then Err.Raise 5, , "FCGI application finished."
+   
+   RaiseEvent SendError(m_RequestId, p_ErrorNumber, p_ErrorDescription)
+End Sub
+
+Public Sub Finished()
+   ' Call this method when your FCGI app is finished responding to the web server.
+   
+   m_Finished = True
+   
+   RaiseEvent SendFinished(m_RequestId)
+End Sub

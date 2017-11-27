@@ -54,63 +54,66 @@ Implements VbFcgiLib.IFcgiApp
 
 Private mo_Resp As vbRichClient5.cStringBuilder
 
-Private Sub IFcgiApp_BuildResponse(ByVal p_RequestId As Long, po_FcgiUpstream As VbFcgiLib.CFcgiUpstream, po_FcgiParams As CFcgiParams, po_FcgiStdIn As CFcgiStdIn)
+Private mo_FcgiParams As VbFcgiLib.CFcgiParams
+Private mo_FcgiStdin As VbFcgiLib.CFcgiStdIn
+
+Private Sub IFcgiApp_ProcessRequest(po_Request As VbFcgiLib.CFcgiRequest, po_Response As VbFcgiLib.CFcgiResponse)
    Dim l_StartedBuildAt As Double
    Dim la_Header() As Byte
    Dim la_Content() As Byte
    Dim ii As Long
-
+   
    On Error GoTo ErrorHandler
-
-   apiOutputDebugString "In IFcgiApp_BuildResponse for Request ID #" & p_RequestId
 
    ' Make sure that CGI parameters are complete built and the Upstream FCGI object has been set
    ' otherwise raise fcgierr_NotReadyForResponse
-   If po_FcgiParams Is Nothing Then Err.Raise fcgierr_NotReadyForResponse, , "FCGI Parameters object required."
-   If po_FcgiParams.State <> paramstate_Built Then Err.Raise fcgierr_NotReadyForResponse, , "FCGI Parameters incomplete."
-   If po_FcgiUpstream Is Nothing Then Err.Raise fcgierr_NotReadyForResponse, , "Parent CFGCI object has not been set."
+   ' None of these error states should ever happen
+   If po_Request.Fcgi.Params.State <> paramstate_Built Then Err.Raise fcgierr_NotReadyForResponse, , "FCGI Parameters incomplete."
    
-   ' Remove the next 2 lines if you aren't interested in STDIN
-   ' Make sure STDIN has been completely received, otherwise raise fcgierr_NotReadyForResponse
-   If po_FcgiStdIn Is Nothing Then Err.Raise fcgierr_NotReadyForResponse, , "FCGI STDIN object required."
-   If po_FcgiStdIn.State <> fcgistdinstate_Built Then Err.Raise fcgierr_NotReadyForResponse, , "FCGI STDIN incomplete."
-
    l_StartedBuildAt = libRc5Factory.C.HPTimer
 
+   Set mo_FcgiParams = po_Request.Fcgi.Params
+   Set mo_FcgiStdin = po_Request.Fcgi.Stdin
+   
    ' Build the HTML portion of the HTTP response
    With mo_Resp
       If .Length > 0 Then .Clear
       
-      .AppendNL "<!DOCTYPE html><html><head><title>vbFCGI Test</title></head><body>"
+      .AppendNL "<!DOCTYPE html><html><head><title>VbFCGI Demo App</title></head><body>"
       .AppendNL "<h1>"
-      .Append ChrW$(&HAAA&) & ChrW$(&HE01&) & ChrW$(&H671&) & ChrW$(&H188&) & ChrW$(&H47B&) & ChrW$(&H257&) & ChrW$(&HFEC9&)
-      .AppendNL " handled via UTF-8"
+      .AppendNL "Welcome to the VbFcgi Demo App!"
       .AppendNL "</h1>"
-
-      .Append "<p><b>Request ID: "
-      .Append CStr(p_RequestId)
-      .Append "</b><br>Date: "
+      
+      .AppendNL "<p><b><a href='https://www.github.com/jpbro/VbFcgi'>Learn more about VbFcgi on GitHub.</a></b></p>"
+      
+      .Append "<p>The current date &amp; time on the server is: "
       .Append CStr(Now)
       .AppendNL "</p>"
 
+      .Append "<p>VbFcgi is "
+      .Append ChrW$(&HAAA&) & ChrW$(&HE01&) & ChrW$(&H671&) & ChrW$(&H188&) & ChrW$(&H47B&) & ChrW$(&H257&) & ChrW$(&HFEC9&)
+      .AppendNL " capable via UTF-8!</p>"
+      
       ' Append parameter key/value table
+      .AppendNL "<h2>Parameters Received from Upstream Webserver:</h2>"
+      
       .Append "<table>"
-      For ii = 1 To po_FcgiParams.Count - 1
+      For ii = 1 To mo_FcgiParams.Count - 1
          .Append "<tr><td>"
-         .Append po_FcgiParams.KeyByIndex(ii)
+         .Append mo_FcgiParams.KeyByIndex(ii)
          .Append "</td><td>"
-         .Append po_FcgiParams.ValueByIndex(ii)
+         .Append mo_FcgiParams.ValueByIndex(ii)
          .AppendNL "</td></tr>"
       Next ii
       .AppendNL "</table>"
 
       ' Append STDIN info
       .AppendNL "<p>FCGI STDIN Content Length: "
-      .AppendNL po_FcgiStdIn.ContentLength
+      .AppendNL mo_FcgiStdin.ContentLength
       .AppendNL "</p>"
       
       ' Append build time in fractional seconds
-      .Append "<p>Build Time: "
+      .Append "<p>Response Build Time: "
       .Append Format$(libRc5Factory.C.HPTimer - l_StartedBuildAt, "0.00000")
       .AppendNL " seconds</p>"
 
@@ -126,12 +129,12 @@ Private Sub IFcgiApp_BuildResponse(ByVal p_RequestId As Long, po_FcgiUpstream As
    la_Header = StrConv("Content-Type: text/html; charset=utf-8" & vbNewLine & "Content-Length: " & (UBound(la_Content) + 1) & vbNewLine & vbNewLine, vbFromUnicode)
 
    ' Signal that bytes are reading for STDOUT
-   po_FcgiUpstream.WriteBytes p_RequestId, la_Header
+   po_Response.WriteBytes la_Header
 
-   po_FcgiUpstream.WriteBytes p_RequestId, la_Content
+   po_Response.WriteBytes la_Content
 
    ' Signal that we are finished with the request/response
-   po_FcgiUpstream.Finished p_RequestId
+   po_Response.Finished
 
    Exit Sub
 
@@ -144,7 +147,7 @@ ErrorHandler:
       Err.Raise Err.Number, , Err.Description
    Else
       ' Raise an error event
-      po_FcgiUpstream.Error p_RequestId, Err.Number, Err.Description & ", Line # " & Erl
+      po_Response.Error Err.Number, Err.Description & ", Line # " & Erl
    End If
 End Sub
 
@@ -155,5 +158,4 @@ End Sub
 Private Sub Class_Terminate()
    Set mo_Resp = Nothing
 End Sub
-
 

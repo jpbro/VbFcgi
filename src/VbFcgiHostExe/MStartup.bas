@@ -34,7 +34,7 @@ Private Const mc_ParamListenPort As String = "/port"  ' In LISTENER mode, the po
                                                       ' In SPAWNER mode, the port number to start spawning listener processes on (+1 for each subsequent process)
 
 ' FCGI listener object (one per listener process)
-Private mo_Fcgi As vbFcgiLib.CFcgi
+Private mo_FcgiServer As vbFcgiLib.CFcgiServer
 
 ' Example usage commandlines:
 ' Stop all running vbFcgi listener processes:
@@ -245,8 +245,8 @@ Sub Main()
             ' Create the FCGI listener and start listening on the appropriate host & port
             apiOutputDebugString "Creating FCGI listener on " & l_Host & ":" & l_Port
 
-            Set mo_Fcgi = libRc5Factory.RegFree.GetInstanceEx(pathBin & "vbFcgiLib.dll", "CFcgi")
-            mo_Fcgi.StartListening l_Host, l_Port
+            Set mo_FcgiServer = libRc5Factory.RegFree.GetInstanceEx(pathBin & "vbFcgiLib.dll", "CFcgiServer")
+            mo_FcgiServer.StartListening l_Host, l_Port
 
             If Not CreateListenerMutex(l_Host, l_Port) Then
                Err.Raise vbObjectError, , "Could not create listener mutex for " & l_Host & ":" & l_Port
@@ -283,9 +283,9 @@ Sub Main()
 Cleanup:
    On Error Resume Next
    
-   If Not mo_Fcgi Is Nothing Then
-      mo_Fcgi.StopListening
-      Set mo_Fcgi = Nothing
+   If Not mo_FcgiServer Is Nothing Then
+      mo_FcgiServer.StopListening
+      Set mo_FcgiServer = Nothing
    End If
    
    libRc5Factory.C.CleanupRichClientDll
