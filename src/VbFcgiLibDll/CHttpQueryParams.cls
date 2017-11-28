@@ -43,6 +43,19 @@ Public Sub AppendValue(ByVal p_Key As String, ByVal p_Value As String)
    End If
 End Sub
 
+Public Property Get DefaultValue(p_KeyOrZeroBasedIndex As Variant) As String
+Attribute DefaultValue.VB_UserMemId = 0
+Attribute DefaultValue.VB_MemberFlags = "40"
+   ' Shortcut for ValuesByKey("key").ValueByIndex(0)
+   '  or ValuesByIndex(#).ValueByIndex(0)
+   
+   If VarType(p_Key) = vbString Then
+      DefaultValue = Me.ValuesByKey(p_Key).ValueByIndex(0)
+   Else
+      DefaultValue = Me.ValuesByIndex(p_Key).ValueByIndex(0)
+   End If
+End Property
+
 Public Property Get ValuesByKey(ByVal p_Key As String) As CHttpQueryParamValues
    Dim ii As Long
    
