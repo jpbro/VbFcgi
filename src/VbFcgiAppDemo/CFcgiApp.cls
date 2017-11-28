@@ -59,15 +59,20 @@ Private mo_FcgiStdin As VbFcgiLib.CFcgiStdIn
 
 Private Sub IFcgiApp_ProcessRequest(po_Request As VbFcgiLib.CFcgiRequest, po_Response As VbFcgiLib.CFcgiResponse)
    Dim l_StartedBuildAt As Double
-   Dim la_Header() As Byte
    Dim la_Content() As Byte
    Dim ii As Long
    
+   Dim l_Title As String
+   Dim l_SubTitle As String
+   Dim l_SubTitleExample As String
+   Dim l_SubTitleExampleUrl As String
+   Dim l_VisitCount As Long
+   
    On Error GoTo ErrorHandler
 
-   ' Make sure that CGI parameters are complete built and the Upstream FCGI object has been set
+   ' Make sure that FCGI parameters are complete built and the Upstream FCGI object has been set
    ' otherwise raise fcgierr_NotReadyForResponse
-   ' None of these error states should ever happen
+   ' Just a sanity check - this should never happen
    If po_Request.Fcgi.Params.State <> paramstate_Built Then Err.Raise fcgierr_NotReadyForResponse, , "FCGI Parameters incomplete."
    
    l_StartedBuildAt = libRc5Factory.C.HPTimer
@@ -79,12 +84,73 @@ Private Sub IFcgiApp_ProcessRequest(po_Request As VbFcgiLib.CFcgiRequest, po_Res
    With mo_Resp
       If .Length > 0 Then .Clear
       
-      .AppendNL "<!DOCTYPE html><html><head><title>VbFCGI Demo App</title></head><body>"
+      ' *** START DEMONSTRATION OF QUERY PARAMETER HANDLING
+      If po_Request.Http.QueryParameters.Exists("title") Then
+         l_Title = htmlEscape(po_Request.Http.QueryParameters.ValuesByKey("title").ValueByIndex(0))
+      End If
+      
+      If stringIsEmptyOrWhitespaceOnly(l_Title) Then
+         l_Title = "vbFcgi Demo App"
+         l_SubTitle = "Pass a ""title"" query to change the title of this page."
+         l_SubTitleExampleUrl = "http://" & po_Request.Fcgi.Params.ValueByEnum(stdparam_HttpHost) & po_Request.Fcgi.Params.ValueByEnum(stdparam_ScriptName) & "?title=Greetings from planet earth!"
+         l_SubTitleExample = "Example: <a href='" & htmlEscape(l_SubTitleExampleUrl) & "'>" & htmlEscape(l_SubTitleExampleUrl) & "</a>"
+      End If
+      ' *** END DEMONSTRATION OF QUERY PARAMETER HANDLING
+      
+      ' Build HTML HEAD
+      .AppendNL "<!DOCTYPE html>"
+      .AppendNL "<html>"
+      .AppendNL "<head><title>"
+      .AppendNL htmlEscape(l_Title)
+      .AppendNL "</title></head>"
+      
+      ' Build HTML BODY
+      .AppendNL "<body>"
       .AppendNL "<h1>"
-      .AppendNL "Welcome to the VbFcgi Demo App!"
+      .AppendNL htmlEscape(l_Title)
       .AppendNL "</h1>"
+      If Not stringIsEmptyOrWhitespaceOnly(l_SubTitle) Then
+         .Append "<h2>"
+         .Append htmlEscape(l_SubTitle)
+         .AppendNL "</h2>"
+         .Append "<p>"
+         .Append l_SubTitleExample
+         .AppendNL "</p>"
+      End If
       
       .AppendNL "<p><b><a href='https://www.github.com/jpbro/VbFcgi'>Learn more about VbFcgi on GitHub.</a></b></p>"
+      
+      ' *** START DEMONSTRATION OF COOKIES
+      .Append "<p style='color:orange;font-weight:bold'>"
+      If po_Request.Http.Cookies.Exists("visits") Then
+         On Error Resume Next
+         l_VisitCount = po_Request.Http.Cookies.CookieByKey("visits").Value
+         On Error GoTo ErrorHandler
+         
+         If l_VisitCount = 0 Then
+            ' Bad cookie value!
+            .Append "Hey! Have you been mucking about with your cookies?"
+         Else
+            ' Display number of visits
+            .Append "You have previously visited this page "
+            .Append CStr(l_VisitCount)
+            .Append " time"
+            If l_VisitCount <> 1 Then
+               .Append "s."
+            Else
+               .Append "."
+            End If
+         End If
+      Else
+         ' First visit
+         .Append "This is your first visit, pleased to meet you!"
+      End If
+      .Append "</p>"
+      
+      ' Increment "Visits" cookie
+      po_Request.Http.Cookies.AddOrReplaceCookie "visits", l_VisitCount + 1
+      ' *** END DEMONSTRATION OF COOKIES
+      
       
       .Append "<p>The current date &amp; time on the server is: "
       .Append CStr(Now)
@@ -94,8 +160,8 @@ Private Sub IFcgiApp_ProcessRequest(po_Request As VbFcgiLib.CFcgiRequest, po_Res
       .Append ChrW$(&HAAA&) & ChrW$(&HE01&) & ChrW$(&H671&) & ChrW$(&H188&) & ChrW$(&H47B&) & ChrW$(&H257&) & ChrW$(&HFEC9&)
       .AppendNL " capable via UTF-8!</p>"
       
-      ' Append parameter key/value table
-      .AppendNL "<h2>Parameters Received from Upstream Webserver:</h2>"
+      ' Append FCGI parameter key/value table
+      .AppendNL "<h2>FCGI Parameters received from Upstream Webserver:</h2>"
       
       .Append "<table>"
       For ii = 1 To mo_FcgiParams.Count - 1
@@ -122,14 +188,18 @@ Private Sub IFcgiApp_ProcessRequest(po_Request As VbFcgiLib.CFcgiRequest, po_Res
       ' Get response content in UTF8, and clear the object
       la_Content = .ToUTF8
       
-      .Clear   ' Release memory
+      ' Empty the content string buffer to prepare for header
+      .Clear
+
+      ' Build the HTTP header portion of the response
+      .AppendNL "Content-Type: text/html; charset=utf-8"
+      .AppendNL "Content-Length: " & (UBound(la_Content) + 1)
+      .Append po_Request.Http.Cookies.CookieHeaders
+      .Append vbNewLine
    End With
 
-   ' Build the HTTP header portion of the response
-   la_Header = StrConv("Content-Type: text/html; charset=utf-8" & vbNewLine & "Content-Length: " & (UBound(la_Content) + 1) & vbNewLine & vbNewLine, vbFromUnicode)
-
-   ' Signal that bytes are reading for STDOUT
-   po_Response.WriteBytes la_Header
+   ' Write bytes upstream
+   po_Response.WriteBytes mo_Resp.ToUTF8
 
    po_Response.WriteBytes la_Content
 
@@ -139,16 +209,18 @@ Private Sub IFcgiApp_ProcessRequest(po_Request As VbFcgiLib.CFcgiRequest, po_Res
    Exit Sub
 
 ErrorHandler:
+   Dim l_ErrNum As Long
+   Dim l_ErrDesc As String
+   
+   l_ErrNum = Err.Number
+   l_ErrDesc = Err.Description
+   
    If Not mo_Resp Is Nothing Then
       mo_Resp.Clear
    End If
    
-   If Err.Number = fcgierr_NotReadyForResponse Then
-      Err.Raise Err.Number, , Err.Description
-   Else
-      ' Raise an error event
-      po_Response.Error Err.Number, Err.Description & ", Line # " & Erl
-   End If
+   ' Send error information upstream event
+   po_Response.Error l_ErrNum, l_ErrDesc
 End Sub
 
 Private Sub Class_Initialize()
