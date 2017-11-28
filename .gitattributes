@@ -24,3 +24,4 @@
 *.ncb binary
 *.exe.compat binary
 *.ocx.compat binary
+*.fcgi binary
