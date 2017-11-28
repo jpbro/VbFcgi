@@ -345,10 +345,14 @@ Private Sub mo_TcpServer_DataArrival(ByVal hSocket As Long, ByVal BytesTotal As 
                      lo_Upstream.Params.State = paramstate_Building
    
                      Do While l_RecordPos + l_Offset + 8 < lt_Record.ContentLength
+                        apiOutputDebugString "Records pos: " & l_RecordPos + l_Offset + 8 & ", Content Len: " & lt_Record.ContentLength
+                        
                         If la_Payload(l_RecordPos + 8 + l_Offset) And &H80 Then
                            ' 4 byte length
+                           apiOutputDebugString "Found "
+                           
                            apiCopyMemory l_ParamLen, la_Payload(l_RecordPos + 8 + l_Offset), 4
-                           l_ParamLen = apiNtohl(l_ParamLen)
+                           l_ParamLen = apiNtohl(l_ParamLen) Xor &H80000000
    
                            l_Offset = l_Offset + 4
                         Else
@@ -364,7 +368,7 @@ Private Sub mo_TcpServer_DataArrival(ByVal hSocket As Long, ByVal BytesTotal As 
                         If la_Payload(l_RecordPos + 8 + l_Offset) And &H80 Then
                            ' 4 byte length
                            apiCopyMemory l_ValueLen, la_Payload(l_RecordPos + 8 + l_Offset), 4
-                           l_ValueLen = apiNtohl(l_ValueLen)
+                           l_ValueLen = apiNtohl(l_ValueLen) Xor &H80000000
    
                            l_Offset = l_Offset + 4
                         Else
@@ -377,14 +381,23 @@ Private Sub mo_TcpServer_DataArrival(ByVal hSocket As Long, ByVal BytesTotal As 
                         End If
    
                         If l_ParamLen > 0 Then
+                           apiOutputDebugString "Param len: " & l_ParamLen
+                           
                            ReDim la_Param(l_ParamLen - 1)
                            apiCopyMemory la_Param(0), la_Payload(l_RecordPos + 8 + l_Offset), l_ParamLen
                            l_Param = libCrypt.UTF8ToVBString(la_Param)
    
+                           apiOutputDebugString "Param: " & l_Param
+   
                            If l_ValueLen > 0 Then
+                              apiOutputDebugString "Value Len: " & l_ValueLen
+                           
                               ReDim la_Value(l_ValueLen - 1)
                               apiCopyMemory la_Value(0), la_Payload(l_RecordPos + 8 + l_Offset + l_ParamLen), l_ValueLen
                               l_Value = libCrypt.UTF8ToVBString(la_Value)
+                              
+                              apiOutputDebugString "Value: " & l_Value
+                           
                            Else
                               l_Value = ""
                            End If
