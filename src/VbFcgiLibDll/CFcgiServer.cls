@@ -175,6 +175,8 @@ Private Sub mo_ActiveDownstream_SendFinished(ByVal p_RequestId As Long)
          fcgiSendEndRequest mo_TcpServer, lo_Upstream.SocketNumber, lo_Upstream.Id, 0, 0
       Else
          apiOutputDebugString "STDOUT could not be flushed in finished event for Request #" & lo_Upstream.Id
+         
+         lo_Upstream.State = fcgireqstate_Error
       End If
       
       RemoveRequestNoErr lo_Upstream
@@ -207,6 +209,10 @@ Private Sub mo_ActiveDownstream_SendBytes(ByVal p_RequestId As Long, pa_Bytes() 
    
       If Not fcgiFlushStdOut(mo_TcpServer, lo_Upstream.SocketNumber, lo_Upstream.Id, lo_Upstream.StdOut, False) Then
          apiOutputDebugString "STDOUT could not be flushed in WriteBytes event for Request #" & lo_Upstream.Id
+         
+         lo_Upstream.State = fcgireqstate_Error
+      
+         RemoveRequestNoErr lo_Upstream
       End If
    End If
    
