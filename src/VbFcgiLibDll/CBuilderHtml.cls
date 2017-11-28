@@ -177,11 +177,11 @@ Public Sub AppendWithTag(ByVal p_Text As String, ByVal p_Tag As String, Optional
    End With
 End Sub
 
-Public Sub AppendWithTagAndAttributes(ByVal p_Text As String, ByVal p_Tag As String, Optional ByVal p_TagName As String, Optional ByVal p_TagId As String, Optional ByVal p_TagStyle As String, Optional ByVal p_EncodeEntities As Boolean = True)
+Public Sub AppendWithTagAndAttributes(ByVal p_Text As String, ByVal p_Tag As String, Optional ByVal p_TagClass As String, Optional ByVal p_TagId As String, Optional ByVal p_TagStyle As String, Optional ByVal p_EncodeEntities As Boolean = True)
    ' In one pass this method will:
    
    ' Append an HTML tag (don't pass the "<>" characters),
-   ' Optionally appending a name='passedname' attribute to the tag
+   ' Optionally appending a class='passedclass' attribute to the tag
    ' Optionally appending an id='passedid' attribute to the tag
    ' Optionally appending a style='passedstyles' attribute to the tag
    ' Then Append any arbitrary text (optionally encoding HTML entities (default))
@@ -193,9 +193,9 @@ Public Sub AppendWithTagAndAttributes(ByVal p_Text As String, ByVal p_Tag As Str
       .Append "<"
       .Append p_Tag
       
-      If Not stringIsEmptyOrWhitespaceOnly(p_TagName) Then
-         .Append " name='"
-         .Append htmlEscape(p_TagName)
+      If Not stringIsEmptyOrWhitespaceOnly(p_TagClass) Then
+         .Append " class='"
+         .Append htmlEscape(p_TagClass)
          .Append "' "
       End If
             
