@@ -67,6 +67,7 @@ Private Sub IFcgiApp_ProcessRequest(po_Request As VbFcgiLib.CFcgiRequest, po_Res
    Dim l_SubTitleExample As String
    Dim l_SubTitleExampleUrl As String
    Dim l_VisitCount As Long
+   Dim l_HttpHost As String
    
    On Error GoTo ErrorHandler
 
@@ -80,19 +81,21 @@ Private Sub IFcgiApp_ProcessRequest(po_Request As VbFcgiLib.CFcgiRequest, po_Res
    Set mo_FcgiParams = po_Request.Fcgi.Params
    Set mo_FcgiStdin = po_Request.Fcgi.Stdin
    
+   l_HttpHost = po_Request.Fcgi.Params.ValueByEnum(stdparam_HttpHost)
+   
    ' Build the HTML portion of the HTTP response
    With mo_Resp
       If .Length > 0 Then .Clear
       
       ' *** START DEMONSTRATION OF QUERY PARAMETER HANDLING
       If po_Request.Http.QueryParameters.Exists("title") Then
-         l_Title = htmlEscape(po_Request.Http.QueryParameters.ValuesByKey("title").ValueByIndex(0))
+         l_Title = htmlEscape(po_Request.Http.QueryParameters("title"))
       End If
       
       If stringIsEmptyOrWhitespaceOnly(l_Title) Then
          l_Title = "vbFcgi Demo App"
          l_SubTitle = "Pass a ""title"" query to change the title of this page."
-         l_SubTitleExampleUrl = "http://" & po_Request.Fcgi.Params.ValueByEnum(stdparam_HttpHost) & po_Request.Fcgi.Params.ValueByEnum(stdparam_ScriptName) & "?title=Greetings from planet earth!"
+         l_SubTitleExampleUrl = "http://" & l_HttpHost & po_Request.Fcgi.Params.ValueByEnum(stdparam_ScriptName) & "?title=Greetings from planet earth!"
          l_SubTitleExample = "Example: <a href='" & htmlEscape(l_SubTitleExampleUrl) & "'>" & htmlEscape(l_SubTitleExampleUrl) & "</a>"
       End If
       ' *** END DEMONSTRATION OF QUERY PARAMETER HANDLING
@@ -151,7 +154,6 @@ Private Sub IFcgiApp_ProcessRequest(po_Request As VbFcgiLib.CFcgiRequest, po_Res
       po_Request.Http.Cookies.AddOrReplaceCookie "visits", l_VisitCount + 1
       ' *** END DEMONSTRATION OF COOKIES
       
-      
       .Append "<p>The current date &amp; time on the server is: "
       .Append CStr(Now)
       .AppendNL "</p>"
@@ -196,6 +198,8 @@ Private Sub IFcgiApp_ProcessRequest(po_Request As VbFcgiLib.CFcgiRequest, po_Res
       .AppendNL "Content-Length: " & (UBound(la_Content) + 1)
       .Append po_Request.Http.Cookies.CookieHeaders
       .Append vbNewLine
+      
+      apiOutputDebugString "HTTP Header: " & vbNewLine & .ToString
    End With
 
    ' Write bytes upstream
