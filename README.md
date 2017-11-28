@@ -6,11 +6,11 @@ VbFcgi is a framework that allows you to easily get VB6 code onto the web. It wa
 
 # Included Executables
 There are 3 main components of the VbFcgi framework:
-1. **VbFcgiLib.dll** - This is the main framework library that includes all of the code for listening and responding to FCGI requests from the web server, as well as parsing out records for FCGI parameters, HTTP cookies, etc... This should be included with every distribution of your FCGI application.
-2. **VbFcgiHost.exe** - This is main executable file that will spawn FCGI listeners (multiple listeners support for load balancing) and monitor for terminated listeners that need respawning. It also acts as a shutdown co-ordinator. This should be included with every distribution of your FCGI application.
+1. **VbFcgiLib.dll** - This is the main framework library that includes all of the code for listening and responding to FCGI requests from the web server, as well as parsing out records for FCGI parameters, HTTP cookies, etc... This file should be included with every distribution of your FCGI application.
+2. **VbFcgiHost.exe** - This is main executable file that will spawn FCGI listener as a broker between your webserver and your FCGI application. It includes support for running multiple listeners on sequential ports for load balancing, and it also monitors for terminated listeners that need respawning. Lastly, it also acts as a shutdown co-ordinator for all running FCGI listener instances. This file should be included with every distribution of your FCGI application.
 3. **VbFcgiApp.dll** - This is the demo FCGI Application code. The version included here is a very basic proof-of-concept that will send an HTML page upstream with a table of the FCGI parameters that were received. The version of this file that is included with this repository should **not** be included when distributing your FCGI application (you should create your own version as described in the *Creating your own FCGI Application* section below).
 
-While the above DLLs are COM ActiveX libraries, you do NOT need to register them with regsvr32 when deploying to users since this code uses Olaf Schmidt's registration-free DirectCOM library. You should register the above DLLs on your development machine though.
+While the above DLLs are COM ActiveX libraries, you do NOT need to register them with regsvr32 when deploying to users since this code uses Olaf Schmidt's registration-free DirectCOM library. You should however register the above DLLs on your development machine.
 
 Also included is a binary build of Nginx with a basic configuration to support a single FCGI host server listener on localhost:9100. This is included for the sake of convenience and to demonstrate a minimal configuration. You should have your own properly configured Nginx (or other web server) running in most cases.
 
@@ -34,8 +34,10 @@ In order to write your own FCGI application from scratch, you must:
 6. Select "IFcgiApp" from the drop down list in code view. It will create the IFcgiApp_ProcessRequest method for you.
 7. Code your app in the IFcgiApp_ProcessRequest method (the rest of the f*cking owl).
 8. Build your DLL app. 
-9. Make a copy of the buuilt DLL and change the extension to .fcgi.
+9. Make a copy of the built DLL and change the extension to .fcgi.
 10. Move the .fcgi file to the same folder as the VbFcgiHost.exe and VbFcgiLib.dll files.
+
+NOTE: You do **not** need to register your FCGI application when distributing it as registration-free instantiation is used by this framework.
 
 When you subsequently run the VbFcgiHost.exe, it will use your .fcgi as a "plugin" (of sorts) for responding to correspondng FCGI requests. For example, typing http://localhost/myapp.fcgi will cause VbFcgiHost to create an instance of the CFcgiApp class from the myapp.fcgi DLL stored in the same folder, and then it will call IFcgiApp_ProcessRequest in that class.
 
