@@ -60,6 +60,7 @@ Public Sub Error(ByVal p_ErrorNumber As Long, ByVal p_ErrorDescription As String
    If m_Finished Then Err.Raise 5, , "FCGI application finished."
    
    RaiseEvent SendError(m_RequestId, p_ErrorNumber, p_ErrorDescription)
+   Me.Finished
 End Sub
 
 Public Sub Finished()
