@@ -49,10 +49,10 @@ Attribute DefaultValue.VB_MemberFlags = "40"
    ' Shortcut for ValuesByKey("key").ValueByIndex(0)
    '  or ValuesByIndex(#).ValueByIndex(0)
    
-   If VarType(p_Key) = vbString Then
-      DefaultValue = Me.ValuesByKey(p_Key).ValueByIndex(0)
+   If VarType(p_KeyOrZeroBasedIndex) = vbString Then
+      DefaultValue = Me.ValuesByKey(p_KeyOrZeroBasedIndex).ValueByIndex(0)
    Else
-      DefaultValue = Me.ValuesByIndex(p_Key).ValueByIndex(0)
+      DefaultValue = Me.ValuesByIndex(p_KeyOrZeroBasedIndex).ValueByIndex(0)
    End If
 End Property
 
