@@ -86,7 +86,7 @@ ErrorHandler:
    Err.Raise Err.Number, Err.Source, Err.Description
 End Function
 
-Public Function htmlEscape(p_UnescapedString As String) As String
+Public Function htmlEscape(p_UnescapedString As String, Optional ByVal p_EncodeSpacesAs As String = " ") As String
    Dim l_InsertPos As Long
    Dim l_CopyFromPos As Long
    Dim l_CopyLen As Long
@@ -313,6 +313,16 @@ Public Function htmlEscape(p_UnescapedString As String) As String
          Case &HA0
             ' Non-breaking space
             l_Replace = "&nbsp;"
+         Case 32
+            If p_EncodeSpacesAs <> " " Then
+               l_Replace = p_EncodeSpacesAs
+            Else
+               If l_Replace <> "" Or l_NeverReplaced Then
+                  l_CopyFromPos = ii
+                  l_NeverReplaced = False
+                  l_Replace = ""
+               End If
+            End If
          Case Is < 32
             ' Unprintable
             l_Replace = " "

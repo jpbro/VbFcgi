@@ -189,37 +189,65 @@ Public Sub AppendWithTagAndAttributes(ByVal p_Text As String, ByVal p_Tag As Str
    
    If m_Finished Then Err.Raise 5, , "The content buffer is closed."
    
+   OpenTagWithAttributes p_Tag, p_TagClass, p_TagId, p_TagStyle
+   
+   If p_EncodeEntities Then
+      mo_StringBuilder.Append htmlEscape(p_Text)
+   Else
+      mo_StringBuilder.Append p_Text
+   End If
+   
+   Me.CloseLastOpenedTag
+End Sub
+
+Public Sub AppendImageTag(ByVal p_Source As String, Optional ByVal p_AlternateText As String, Optional ByVal p_WidthPx As Long = -1, Optional ByVal p_HeightPx As Long = -1, Optional ByVal p_Class As String, Optional ByVal p_Id As String, Optional ByVal p_Style As String)
    With mo_StringBuilder
       .Append "<"
-      .Append p_Tag
+      .Append "img"
       
-      If Not stringIsEmptyOrWhitespaceOnly(p_TagClass) Then
-         .Append " class='"
-         .Append htmlEscape(p_TagClass)
+      If Not stringIsEmptyOrWhitespaceOnly(p_Source) Then
+         .Append " src='"
+         .Append htmlEscape(p_Source, "%20")
+         .Append "' "
+      End If
+      
+      If Not stringIsEmptyOrWhitespaceOnly(p_AlternateText) Then
+         .Append " alt='"
+         .Append htmlEscape(p_AlternateText)
+         .Append "' "
+      End If
+      
+      If p_WidthPx >= 0 Then
+         .Append " width='"
+         .Append CStr(p_WidthPx)
+         .Append "' "
+      End If
+      
+      If p_HeightPx >= 0 Then
+         .Append " height='"
+         .Append CStr(p_HeightPx)
          .Append "' "
       End If
             
-      If Not stringIsEmptyOrWhitespaceOnly(p_TagId) Then
-         .Append " id='"
-         .Append htmlEscape(p_TagId)
+      If Not stringIsEmptyOrWhitespaceOnly(p_Class) Then
+         .Append " class='"
+         .Append htmlEscape(p_Class)
          .Append "' "
       End If
       
-      If Not stringIsEmptyOrWhitespaceOnly(p_TagStyle) Then
+      If Not stringIsEmptyOrWhitespaceOnly(p_Id) Then
+         .Append " id='"
+         .Append htmlEscape(p_Id)
+         .Append "' "
+      End If
+      
+      If Not stringIsEmptyOrWhitespaceOnly(p_Style) Then
          .Append " style='"
-         .Append htmlEscape(p_TagStyle)
+         .Append htmlEscape(p_Style)
          .Append "' "
       End If
       
       .Append ">"
-      
-      If p_EncodeEntities Then
-         .Append htmlEscape(p_Text)
-      Else
-         .Append p_Text
-      End If
-      
-      CloseTag p_Tag
    End With
 End Sub
 
@@ -259,6 +287,80 @@ Public Function OpenTags(ParamArray pa_Tags() As Variant) As Long
          
       End Select
    Next ii
+End Function
+
+Public Function OpenHyperlinkTag(ByVal p_Href As String, Optional ByVal p_Target As String, Optional ByVal p_Class As String, Optional ByVal p_Id As String, Optional ByVal p_Style As String) As Long
+   OpenHyperlinkTag = mo_Tags.Count
+   
+   mo_Tags.Push "a"
+   
+   With mo_StringBuilder
+      .Append "<"
+      .Append "a"
+      
+      If Not stringIsEmptyOrWhitespaceOnly(p_Href) Then
+         .Append " href='"
+         .Append htmlEscape(p_Href, "%20")
+         .Append "' "
+      End If
+      
+      If Not stringIsEmptyOrWhitespaceOnly(p_Target) Then
+         .Append " target='"
+         .Append htmlEscape(p_Target)
+         .Append "' "
+      End If
+      
+      If Not stringIsEmptyOrWhitespaceOnly(p_Class) Then
+         .Append " class='"
+         .Append htmlEscape(p_Class)
+         .Append "' "
+      End If
+            
+      If Not stringIsEmptyOrWhitespaceOnly(p_Id) Then
+         .Append " id='"
+         .Append htmlEscape(p_Id)
+         .Append "' "
+      End If
+      
+      If Not stringIsEmptyOrWhitespaceOnly(p_Style) Then
+         .Append " style='"
+         .Append htmlEscape(p_Style)
+         .Append "' "
+      End If
+      
+      .Append ">"
+   End With
+End Function
+
+Public Function OpenTagWithAttributes(ByVal p_Tag As String, Optional ByVal p_TagClass As String, Optional ByVal p_TagId As String, Optional ByVal p_TagStyle As String) As Long
+   OpenTagWithAttributes = mo_Tags.Count
+   
+   mo_Tags.Push p_Tag
+   
+   With mo_StringBuilder
+      .Append "<"
+      .Append p_Tag
+      
+      If Not stringIsEmptyOrWhitespaceOnly(p_TagClass) Then
+         .Append " class='"
+         .Append htmlEscape(p_TagClass)
+         .Append "' "
+      End If
+            
+      If Not stringIsEmptyOrWhitespaceOnly(p_TagId) Then
+         .Append " id='"
+         .Append htmlEscape(p_TagId)
+         .Append "' "
+      End If
+      
+      If Not stringIsEmptyOrWhitespaceOnly(p_TagStyle) Then
+         .Append " style='"
+         .Append htmlEscape(p_TagStyle)
+         .Append "' "
+      End If
+      
+      .Append ">"
+   End With
 End Function
 
 Public Sub CloseOpenedTagsToIndex(ByVal p_Index As Long)
@@ -308,7 +410,7 @@ Private Sub CloseTag(ByVal p_Tag As String)
 End Sub
 
 Private Sub OpenTag(ByVal p_Tag As String, ByVal p_PushToStack As Boolean)
-   If p_PushToStack Then mo_Tags.Push CStr(p_Tag)
+   If p_PushToStack Then mo_Tags.Push p_Tag
 
    With mo_StringBuilder
       .Append "<"
@@ -317,3 +419,6 @@ Private Sub OpenTag(ByVal p_Tag As String, ByVal p_PushToStack As Boolean)
    End With
 End Sub
 
+Public Function EncodeEntities(ByVal p_Text As String) As String
+   EncodeEntities = htmlEscape(p_Text)
+End Function

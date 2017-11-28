@@ -12,11 +12,15 @@ Public Sub TestBuilderHtml()
    x.CloseOpenedTagsToIndex l_TagIndex
    x.Append vbNewLine
    
-   x.OpenTags "body", "table", "tr"
+   x.OpenTags "body"
+   l_TagIndex = x.OpenTags("table", "tr")
    x.AppendWithTag "This is a test & stuff.", "td"
    x.CloseLastOpenedTag
    x.OpenTags "tr"
    x.AppendWithTag "This is a test2.", "td"
+   x.CloseOpenedTagsToIndex l_TagIndex
+   
+   x.OpenHyperlinkTag "http://www.statslog.com"
    x.CloseAllOpenedTags ' Optional, calling Finished will also take care of this.
    
    x.Finished contentencoding_UTF16_LE
