@@ -2,7 +2,7 @@ Attribute VB_Name = "MDates"
 Option Explicit
 
 Public Function dateUtcToCookieDate(ByVal p_GmtDate As Date) As String
-   dateUtcToCookieDate = "Wdy, DD-Mon-YYYY HH:MM:SS GMT"
+   dateUtcToCookieDate = "Wdy, DD Mon YYYY HH:MM:SS GMT"
    
    Mid$(dateUtcToCookieDate, 1, 3) = CookieWeekday(Weekday(p_GmtDate, vbSunday))
    Mid$(dateUtcToCookieDate, 6, 2) = Format$(Day(p_GmtDate), "00")
