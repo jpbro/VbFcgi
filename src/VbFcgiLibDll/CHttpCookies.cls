@@ -37,7 +37,7 @@ Public Property Get CookieHeaders() As String
          .Append libCrypt.URLEncode(lo_Cookie.Value)
          
          If stringIsEmptyOrWhitespaceOnly(lo_Cookie.Domain) Then
-            ' Empty cookie
+            ' Empty domain
          Else
             .Append "; Domain="
             .Append lo_Cookie.Domain
@@ -83,16 +83,20 @@ Public Sub ParseCookies(po_FcgiParams As CFcgiParams, ByVal p_CookieDomain As St
    
    mo_Cookies.RemoveAll
    
-   If Not po_FcgiParams.ExistsByEnum(stdparam_HttpCookie) Then Exit Sub
+   If Not po_FcgiParams.ExistsByEnum(stdparam_HttpCookie) Then
+      apiOutputDebugString "No cookie header found in request."
+      Exit Sub
+   End If
    
    l_Cookies = Trim$(po_FcgiParams.ValueByEnum(stdparam_HttpCookie))
    
-   If LenB(l_Cookies) = 0 Then Exit Sub
+   If LenB(l_Cookies) = 0 Then
+      apiOutputDebugString "Cookies parameter was found but is empty."
+      Exit Sub
+   End If
       
-   mo_Cookies.RemoveAll
-   
-   If LenB(Trim$(l_Cookies)) = 0 Then Exit Sub
-   
+   apiOutputDebugString "Parsing Cookies: " & l_Cookies
+      
    la_Cookies = Split(l_Cookies, ";")
    For ii = 0 To UBound(la_Cookies)
       la_Cookie = Split(la_Cookies(ii), "=")
