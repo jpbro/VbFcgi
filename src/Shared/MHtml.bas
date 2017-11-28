@@ -117,7 +117,7 @@ Public Function htmlEscape(p_UnescapedString As String) As String
       Case "&"
          l_Replace = "&amp;"
       Case "'"
-         l_Replace = "&apos;"
+         l_Replace = "&#39;"
       Case """"
          l_Replace = "&quot;"
 '      Case "ó"
