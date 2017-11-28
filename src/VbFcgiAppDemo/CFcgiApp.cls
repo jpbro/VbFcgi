@@ -52,22 +52,21 @@ Implements VbFcgiLib.IFcgiApp
 ' In reality you would parse out the QUERY_STRING and HTTP_COOKIES parameters where available
 ' And respond accordingly, but this is beyond the scope of this demo.
 
-Private mo_Resp As vbRichClient5.cStringBuilder
-
 Private mo_FcgiParams As VbFcgiLib.CFcgiParams
 Private mo_FcgiStdin As VbFcgiLib.CFcgiStdIn
 
 Private Sub IFcgiApp_ProcessRequest(po_Request As VbFcgiLib.CFcgiRequest, po_Response As VbFcgiLib.CFcgiResponse)
    Dim l_StartedBuildAt As Double
-   Dim la_Content() As Byte
    Dim ii As Long
    
+   Dim lo_Header As vbRichClient5.cStringBuilder
    Dim l_Title As String
    Dim l_SubTitle As String
    Dim l_SubTitleExample As String
    Dim l_SubTitleExampleUrl As String
    Dim l_VisitCount As Long
    Dim l_HttpHost As String
+   Dim l_TagIndex As Long
    
    On Error GoTo ErrorHandler
 
@@ -84,45 +83,43 @@ Private Sub IFcgiApp_ProcessRequest(po_Request As VbFcgiLib.CFcgiRequest, po_Res
    l_HttpHost = po_Request.Fcgi.Params.ValueByEnum(stdparam_HttpHost)
    
    ' Build the HTML portion of the HTTP response
-   With mo_Resp
-      If .Length > 0 Then .Clear
+   With po_Response.Builders.Html
+      .AppendDocType htmldoctype_Html5
       
+      .OpenTags "html"
+      
+      l_TagIndex = .OpenTags("head")
+            
       ' *** START DEMONSTRATION OF QUERY PARAMETER HANDLING
       If po_Request.Http.QueryParameters.Exists("title") Then
          l_Title = htmlEscape(po_Request.Http.QueryParameters("title"))
       End If
-      
+      ' *** END DEMONSTRATION OF QUERY PARAMETER HANDLING
       If stringIsEmptyOrWhitespaceOnly(l_Title) Then
          l_Title = "vbFcgi Demo App"
          l_SubTitle = "Pass a ""title"" query to change the title of this page."
          l_SubTitleExampleUrl = "http://" & l_HttpHost & po_Request.Fcgi.Params.ValueByEnum(stdparam_ScriptName) & "?title=Greetings from planet earth!"
          l_SubTitleExample = "Example: <a href='" & htmlEscape(l_SubTitleExampleUrl) & "'>" & htmlEscape(l_SubTitleExampleUrl) & "</a>"
       End If
-      ' *** END DEMONSTRATION OF QUERY PARAMETER HANDLING
       
-      ' Build HTML HEAD
-      .AppendNL "<!DOCTYPE html>"
-      .AppendNL "<html>"
-      .AppendNL "<head><title>"
-      .AppendNL htmlEscape(l_Title)
-      .AppendNL "</title></head>"
+      .AppendWithTag l_Title, "title"
       
-      ' Build HTML BODY
-      .AppendNL "<body>"
-      .AppendNL "<h1>"
-      .AppendNL htmlEscape(l_Title)
-      .AppendNL "</h1>"
+      .CloseOpenedTagsToIndex l_TagIndex  ' Close <head> tag
+      
+      ' Build BODY
+      .OpenTags "body"
+      
+      .AppendWithTag l_Title, "h1"
+   
       If Not stringIsEmptyOrWhitespaceOnly(l_SubTitle) Then
-         .Append "<h2>"
-         .Append htmlEscape(l_SubTitle)
-         .AppendNL "</h2>"
-         .Append "<p>"
-         .Append l_SubTitleExample
-         .AppendNL "</p>"
+         .AppendWithTag l_SubTitle, "h2"
+         .AppendWithTag l_SubTitleExample, "p", False ' Don't encode entities since we done it already
       End If
-      
-      .AppendNL "<p><b><a href='https://www.github.com/jpbro/VbFcgi'>Learn more about VbFcgi on GitHub.</a></b></p>"
-      
+   
+      l_TagIndex = .OpenTags("p", "b")
+      .Append "<a href='https://www.github.com/jpbro/VbFcgi'>Learn more about VbFcgi on GitHub.</a>"
+      .CloseOpenedTagsToIndex l_TagIndex
+   
       ' *** START DEMONSTRATION OF COOKIES
       .Append "<p style='color:orange;font-weight:bold'>"
       If po_Request.Http.Cookies.Exists("visits") Then
@@ -153,49 +150,40 @@ Private Sub IFcgiApp_ProcessRequest(po_Request As VbFcgiLib.CFcgiRequest, po_Res
       ' Increment "Visits" cookie
       po_Request.Http.Cookies.AddOrReplaceCookie "visits", l_VisitCount + 1
       ' *** END DEMONSTRATION OF COOKIES
-      
-      .Append "<p>The current date &amp; time on the server is: "
-      .Append CStr(Now)
-      .AppendNL "</p>"
-
-      .Append "<p>VbFcgi is "
-      .Append ChrW$(&HAAA&) & ChrW$(&HE01&) & ChrW$(&H671&) & ChrW$(&H188&) & ChrW$(&H47B&) & ChrW$(&H257&) & ChrW$(&HFEC9&)
-      .AppendNL " capable via UTF-8!</p>"
-      
-      ' Append FCGI parameter key/value table
-      .AppendNL "<h2>FCGI Parameters received from Upstream Webserver:</h2>"
-      
-      .Append "<table>"
+   
+      .AppendWithTag "The current date & time on the server is: " & Now, "p"
+      .AppendWithTag "VbFcgi is " & ChrW$(&HAAA&) & ChrW$(&HE01&) & ChrW$(&H671&) & ChrW$(&H188&) & ChrW$(&H47B&) & ChrW$(&H257&) & ChrW$(&HFEC9&) & " capable via UTF-8!", "p"
+    
+      ' Buuild FCGI Parameters table
+      .AppendWithTag "FCGI Parameters received from Upstream Webserver:", "h2"
+      .OpenTags "table"
       For ii = 1 To mo_FcgiParams.Count - 1
-         .Append "<tr><td>"
-         .Append mo_FcgiParams.KeyByIndex(ii)
-         .Append "</td><td>"
-         .Append mo_FcgiParams.ValueByIndex(ii)
-         .AppendNL "</td></tr>"
+         .OpenTags "tr"
+         .AppendWithTag mo_FcgiParams.KeyByIndex(ii), "td"
+         .AppendWithTag mo_FcgiParams.ValueByIndex(ii), "td"
+         .CloseLastOpenedTag  ' Close tr tag
       Next ii
-      .AppendNL "</table>"
-
-      ' Append STDIN info
-      .AppendNL "<p>FCGI STDIN Content Length: "
-      .AppendNL mo_FcgiStdin.ContentLength
-      .AppendNL "</p>"
+      .CloseLastOpenedTag  ' Close table tag
       
-      ' Append build time in fractional seconds
-      .Append "<p>Response Build Time: "
-      .Append Format$(libRc5Factory.C.HPTimer - l_StartedBuildAt, "0.00000")
-      .AppendNL " seconds</p>"
-
-      .Append "</body></html>"
-
-      ' Get response content in UTF8, and clear the object
-      la_Content = .ToUTF8
+      ' Build STDIN info
+      .AppendWithTag "FCGI STDIN Content Length: " & mo_FcgiStdin.ContentLength, "p"
       
-      ' Empty the content string buffer to prepare for header
-      .Clear
-
+      ' Build response time info
+      .AppendWithTag "Response Build Time: " & Format$(libRc5Factory.C.HPTimer - l_StartedBuildAt, "0.00000") & " seconds", "p"
+      
+      ' Close all open tags in reverse order
+      .CloseAllOpenedTags
+      
+      ' Finish building HTML and convert to UTF-8
+      .Finished contentencoding_UTF8
+   End With
+      
+   ' Build HTTP header
+   Set lo_Header = libRc5Factory.C.StringBuilder
+   With lo_Header
       ' Build the HTTP header portion of the response
       .AppendNL "Content-Type: text/html; charset=utf-8"
-      .AppendNL "Content-Length: " & (UBound(la_Content) + 1)
+      .AppendNL "Content-Length: " & po_Response.Builders.Html.Length
       .Append po_Request.Http.Cookies.CookieHeaders
       .Append vbNewLine
       
@@ -203,9 +191,11 @@ Private Sub IFcgiApp_ProcessRequest(po_Request As VbFcgiLib.CFcgiRequest, po_Res
    End With
 
    ' Write bytes upstream
-   po_Response.WriteBytes mo_Resp.ToUTF8
+   ' Write HTTP Header
+   po_Response.WriteBytes lo_Header.ToUTF8
 
-   po_Response.WriteBytes la_Content
+   ' Write HTML content
+   po_Response.WriteBytes po_Response.Builders.Html.Content
 
    ' Signal that we are finished with the request/response
    po_Response.Finished
@@ -219,19 +209,7 @@ ErrorHandler:
    l_ErrNum = Err.Number
    l_ErrDesc = Err.Description
    
-   If Not mo_Resp Is Nothing Then
-      mo_Resp.Clear
-   End If
-   
    ' Send error information upstream event
    po_Response.Error l_ErrNum, l_ErrDesc
-End Sub
-
-Private Sub Class_Initialize()
-   Set mo_Resp = libRc5Factory.C.StringBuilder
-End Sub
-
-Private Sub Class_Terminate()
-   Set mo_Resp = Nothing
 End Sub
 
