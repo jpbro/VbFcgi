@@ -92,14 +92,13 @@ Private Sub IFcgiApp_ProcessRequest(po_Request As VbFcgiLib.CFcgiRequest, po_Res
             
       ' *** START DEMONSTRATION OF QUERY PARAMETER HANDLING
       If po_Request.Http.QueryParameters.Exists("title") Then
-         l_Title = htmlEscape(po_Request.Http.QueryParameters("title"))
+         l_Title = po_Response.Builders.Html.EncodeEntities(po_Request.Http.QueryParameters("title"))
       End If
       ' *** END DEMONSTRATION OF QUERY PARAMETER HANDLING
       If stringIsEmptyOrWhitespaceOnly(l_Title) Then
          l_Title = "vbFcgi Demo App"
          l_SubTitle = "Pass a ""title"" query to change the title of this page."
          l_SubTitleExampleUrl = "http://" & l_HttpHost & po_Request.Fcgi.Params.ValueByEnum(stdparam_ScriptName) & "?title=Greetings from planet earth!"
-         l_SubTitleExample = "Example: <a href='" & htmlEscape(l_SubTitleExampleUrl) & "'>" & htmlEscape(l_SubTitleExampleUrl) & "</a>"
       End If
       
       .AppendWithTag l_Title, "title"
@@ -113,15 +112,20 @@ Private Sub IFcgiApp_ProcessRequest(po_Request As VbFcgiLib.CFcgiRequest, po_Res
    
       If Not stringIsEmptyOrWhitespaceOnly(l_SubTitle) Then
          .AppendWithTag l_SubTitle, "h2"
-         .AppendWithTag l_SubTitleExample, "p", False ' Don't encode entities since we done it already
+                                    
+         l_TagIndex = .OpenTags("p")
+         .Append "Example: "
+         .OpenHyperlinkTag l_SubTitleExampleUrl
+         .Append .EncodeEntities(l_SubTitleExampleUrl)
+         .CloseOpenedTagsToIndex l_TagIndex ' Close up to H3 tag
       End If
    
       l_TagIndex = .OpenTags("p", "b")
       .Append "<a href='https://www.github.com/jpbro/VbFcgi'>Learn more about VbFcgi on GitHub.</a>"
-      .CloseOpenedTagsToIndex l_TagIndex
+      .CloseOpenedTagsToIndex l_TagIndex  ' Close B and P tags
    
       ' *** START DEMONSTRATION OF COOKIES
-      .Append "<p style='color:orange;font-weight:bold'>"
+      l_TagIndex = .OpenTagWithAttributes("p", , , "color: orange; font-weight: bold;")
       If po_Request.Http.Cookies.Exists("visits") Then
          On Error Resume Next
          l_VisitCount = po_Request.Http.Cookies.CookieByKey("visits").Value
@@ -132,29 +136,22 @@ Private Sub IFcgiApp_ProcessRequest(po_Request As VbFcgiLib.CFcgiRequest, po_Res
             .Append "Hey! Have you been mucking about with your cookies?"
          Else
             ' Display number of visits
-            .Append "You have previously visited this page "
-            .Append CStr(l_VisitCount)
-            .Append " time"
-            If l_VisitCount <> 1 Then
-               .Append "s."
-            Else
-               .Append "."
-            End If
+            .Append4 "You have previously visited this page ", l_VisitCount, " time", IIf(l_VisitCount <> 1, "s.", ".")
          End If
       Else
          ' First visit
          .Append "This is your first visit, pleased to meet you!"
       End If
-      .Append "</p>"
-      
+      .CloseOpenedTagsToIndex l_TagIndex  ' Close P tag
+            
       ' Increment "Visits" cookie
       po_Request.Http.Cookies.AddOrReplaceCookie "visits", l_VisitCount + 1
       ' *** END DEMONSTRATION OF COOKIES
    
-      .AppendWithTag "The current date & time on the server is: " & Now, "p"
+      .Append4 "<p>", "The current date & time on the server is: ", Now, "</p>"
       .AppendWithTag "VbFcgi is " & ChrW$(&HAAA&) & ChrW$(&HE01&) & ChrW$(&H671&) & ChrW$(&H188&) & ChrW$(&H47B&) & ChrW$(&H257&) & ChrW$(&HFEC9&) & " capable via UTF-8!", "p"
     
-      ' Buuild FCGI Parameters table
+      ' Build FCGI Parameters table
       .AppendWithTag "FCGI Parameters received from Upstream Webserver:", "h2"
       .OpenTags "table"
       For ii = 1 To mo_FcgiParams.Count - 1
