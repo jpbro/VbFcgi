@@ -287,6 +287,8 @@ Private Sub mo_TcpServer_DataArrival(ByVal hSocket As Long, ByVal BytesTotal As 
       If lt_Record.ContentLength > 0 Then
          ReDim la_Content(lt_Record.ContentLength - 1)
          apiCopyMemory la_Content(0), la_Payload(l_RecordPos + 8), lt_Record.ContentLength
+      Else
+         Erase la_Content
       End If
 
       lt_Record.PaddingLength = la_Payload(l_RecordPos + 6)
@@ -342,6 +344,8 @@ Private Sub mo_TcpServer_DataArrival(ByVal hSocket As Long, ByVal BytesTotal As 
    
                   If lt_Record.ContentLength = 0 Then
                      ' End of FCGI_PARAMS records, mark parameters object as finished
+                     apiOutputDebugString "All FCGI Params content decoded. RecordPos: " & l_RecordPos & ", Bytes Total: " & BytesTotal
+                     
                      lo_Upstream.Params.State = paramstate_Built
       
                   Else
@@ -350,7 +354,7 @@ Private Sub mo_TcpServer_DataArrival(ByVal hSocket As Long, ByVal BytesTotal As 
                      ' Get Parameter Length
                      lo_Upstream.Params.State = paramstate_Building
    
-                     Do While l_RecordPos + l_Offset + 8 < lt_Record.ContentLength
+                     Do While l_RecordPos + l_Offset < lt_Record.ContentLength
                         apiOutputDebugString "Records pos: " & l_RecordPos + l_Offset + 8 & ", Content Len: " & lt_Record.ContentLength
                         
                         If la_Payload(l_RecordPos + 8 + l_Offset) And &H80 Then
