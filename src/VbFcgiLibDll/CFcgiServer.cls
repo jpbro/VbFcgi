@@ -590,8 +590,11 @@ Private Sub mo_ResponseTimer_Timer()
                         
                         l_AppKey = LCase$(l_ScriptName)
                         
-                        If Right$(l_AppKey, Len(".fcgi")) <> ".fcgi" Then
-                           Err.Raise 70, , "Permission denied to access libraries with a .fcgi file extesion. Passed script name: " & l_ScriptName
+                        If Not envDebugMode Then
+                           ' Only allow access to apps with a .fcgi extension when not in debug mode.
+                           If Right$(l_AppKey, Len(".fcgi")) <> ".fcgi" Then
+                              Err.Raise 70, , "Permission denied to access libraries with a .fcgi file extesion. Passed script name: " & l_ScriptName
+                           End If
                         End If
                         
                         If mo_FcgiApps.Exists(l_AppKey) Then
