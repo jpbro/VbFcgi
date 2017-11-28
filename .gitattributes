@@ -25,3 +25,4 @@
 *.exe.compat binary
 *.ocx.compat binary
 *.fcgi binary
+bin/nginx/* linguist-vendored
