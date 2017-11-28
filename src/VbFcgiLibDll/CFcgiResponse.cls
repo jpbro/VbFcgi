@@ -39,11 +39,19 @@ Public Event SendBytes(ByVal p_RequestId As Long, pa_Bytes() As Byte)
 Public Event SendError(ByVal p_RequestId As Long, ByVal p_ErrorNumber As Long, ByVal p_ErrorDescription As String)
 Public Event SendFinished(ByVal p_RequestId As Long)
 
+Private mo_Builders As VbFcgiLib.CBuilders
+
 Private m_RequestId As Long
 Private m_Finished As Boolean
 
 Friend Property Let RequestId(ByVal p_RequestId As Long)
    m_RequestId = p_RequestId
+End Property
+
+Public Property Get Builders() As VbFcgiLib.CBuilders
+   If mo_Builders Is Nothing Then Set mo_Builders = New VbFcgiLib.CBuilders
+   
+   Set Builders = mo_Builders
 End Property
 
 Public Sub WriteBytes(pa_Bytes() As Byte)
