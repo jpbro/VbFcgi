@@ -13,9 +13,16 @@ Attribute VB_PredeclaredId = False
 Attribute VB_Exposed = True
 Option Explicit
 
+Implements VbFcgiLib.IBuilder
+
+Public Event Finished()
+
 Public Enum e_HtmlDocType
    htmldoctype_Html5
 End Enum
+
+Private WithEvents mo_HttpHeader As VbFcgiLib.CHttpHeader
+Attribute mo_HttpHeader.VB_VarHelpID = -1
 
 Private mo_StringBuilder As vbRichClient5.cStringBuilder
 Private mo_Tags As vbRichClient5.cArrayList
@@ -24,65 +31,13 @@ Private m_Length As Long
 Private m_ContentEncoding As VbFcgiLib.e_ContentEncoding
 Private ma_Content() As Byte
 
+Public Property Get BuilderInterface() As VbFcgiLib.IBuilder
+   Set BuilderInterface = Me
+End Property
+
 Private Sub Class_Initialize()
-   Me.Reset
+   IBuilder_Reset
 End Sub
-
-Public Sub Reset()
-   m_Finished = False
-   m_ContentEncoding = contentencoding_Unknown
-   
-   Erase ma_Content
-   
-   Set mo_StringBuilder = libRc5Factory.C.StringBuilder
-   Set mo_Tags = libRc5Factory.C.ArrayList(vbString)
-End Sub
-
-Public Sub Finished(Optional ByVal p_ContentEncoding As VbFcgiLib.e_ContentEncoding = contentencoding_UTF8)
-   ' Call this method when you are finished building your HTML
-   ' Once called, the Content, Length, and ContentEncoding properties will become valid.
-      
-   Select Case p_ContentEncoding
-   Case contentencoding_UTF8
-      Me.CloseAllOpenedTags
-      
-      ma_Content = mo_StringBuilder.ToUTF8
-   
-   Case contentencoding_UTF16_LE
-      Me.CloseAllOpenedTags
-      
-      ma_Content = mo_StringBuilder.ToString
-   
-   Case Else
-      Err.Raise 5, , "Unknown content encoding enum: " & p_ContentEncoding
-   End Select
-   
-   m_Finished = True
-   m_ContentEncoding = p_ContentEncoding
-   m_Length = UBound(ma_Content) - LBound(ma_Content) + 1
-   
-   Set mo_StringBuilder = Nothing
-   Set mo_Tags = Nothing
-End Sub
-
-Public Property Get Content() As Byte()
-   ' You must call the Finish method before you call this property.
-   ' Call this property to get your finished content as a Me.ContentEncoding format Byte Array
-   
-   If Not m_Finished Then Err.Raise 5, , "You must call the Finished method before requesting content."
-   
-   Content = ma_Content
-End Property
-
-Public Property Get Length() As Long
-   ' You must call the Finish method before you call this property.
-   
-   ' This property returns the length of the Content byte array.
-   
-   If Not m_Finished Then Err.Raise 5, , "You must call the Finished method before requesting the content length."
-   
-   Length = m_Length
-End Property
 
 Public Property Get ContentEncoding() As VbFcgiLib.e_ContentEncoding
    ' You must call the Finish method before you call this property.
@@ -422,3 +377,146 @@ End Sub
 Public Function EncodeEntities(ByVal p_Text As String) As String
    EncodeEntities = htmlEscape(p_Text)
 End Function
+
+Private Property Get IBuilder_Content() As Byte()
+   ' You must call the Finish method before you call this property.
+   ' Call this property to get your finished content as a Me.ContentEncoding format Byte Array
+   
+   If Not m_Finished Then Err.Raise 5, , "You must call the Finished method before requesting content."
+   
+   IBuilder_Content = ma_Content
+End Property
+
+Private Property Get IBuilder_HttpHeader() As VbFcgiLib.CHttpHeader
+   Set IBuilder_HttpHeader = mo_HttpHeader
+End Property
+
+Private Sub IBuilder_Finish(Optional ByVal p_ContentEncoding As VbFcgiLib.e_ContentEncoding = contentencoding_RecommendedDefault)
+   ' Call this method when you are finished building your HTML
+   ' Once called, the Content, Length, and ContentEncoding properties will become valid.
+      
+   If p_ContentEncoding = contentencoding_RecommendedDefault Then p_ContentEncoding = contentencoding_UTF8
+      
+   Select Case p_ContentEncoding
+   Case contentencoding_UTF8
+      Me.CloseAllOpenedTags
+      
+      ma_Content = mo_StringBuilder.ToUTF8
+   
+   Case contentencoding_UTF16_LE
+      Me.CloseAllOpenedTags
+      
+      ma_Content = mo_StringBuilder.ToString
+   
+   Case contentencoding_ISO8859_1
+      Me.CloseAllOpenedTags
+      
+      ma_Content = stringVbToIso88591(mo_StringBuilder.ToString)
+      
+   Case contentencoding_USASCII
+      Me.CloseAllOpenedTags
+      
+      ma_Content = stringVbToUsAscii(mo_StringBuilder.ToString)
+      
+   Case Else
+      Err.Raise 5, , "Unknown content encoding enum: " & p_ContentEncoding
+   End Select
+   
+   m_Finished = True
+   m_ContentEncoding = p_ContentEncoding
+   m_Length = arraySize(ma_Content)
+   
+   Set mo_StringBuilder = Nothing
+   Set mo_Tags = Nothing
+
+   RaiseEvent Finished
+End Sub
+
+Private Property Get IBuilder_IsFinished() As Boolean
+   IBuilder_IsFinished = m_Finished
+End Property
+
+Private Property Get IBuilder_Length() As Long
+   ' You must call the Finish method before you call this property.
+   
+   ' This property returns the length of the Content byte array.
+   
+   If Not m_Finished Then Err.Raise 5, , "You must call the Finished method before requesting the content length."
+   
+   IBuilder_Length = m_Length
+End Property
+
+Private Sub IBuilder_Reset()
+   m_Finished = False
+   m_ContentEncoding = contentencoding_Unknown
+   
+   Erase ma_Content
+   
+   Set mo_HttpHeader = New VbFcgiLib.CHttpHeader
+   Set mo_StringBuilder = libRc5Factory.C.StringBuilder
+   Set mo_Tags = libRc5Factory.C.ArrayList(vbString)
+End Sub
+
+Public Sub Finish(ByVal p_ContentEncoding As VbFcgiLib.e_ContentEncoding)
+   IBuilder_Finish p_ContentEncoding
+End Sub
+
+Public Function Content() As Byte()
+   Content = IBuilder_Content
+End Function
+
+Public Function Length() As Long
+   Length = IBuilder_Length
+End Function
+
+Public Function IsFinished() As Boolean
+   IsFinished = IBuilder_IsFinished
+End Function
+
+Private Sub mo_HttpHeader_BeforeBuildHttpHeader()
+   ' Make sure the HTTP header includes the "Content-Type: text/html"
+   ' and "Content-Length" headers.
+   
+   Dim l_Charset As String
+   
+   ' Add Content-Type header if it doesn't already exist
+   If Not mo_HttpHeader.Exists("Content-Type") Then
+      With mo_HttpHeader.Add("Content-Type")
+         With .InitializeByKeyValuePairs()
+            .Add "", "text/html"
+            
+            Select Case Me.ContentEncoding
+            Case contentencoding_UTF8
+               l_Charset = "utf-8"
+               
+            Case contentencoding_UTF16_LE
+               l_Charset = "utf-16le"
+               
+            Case contentencoding_USASCII
+               l_Charset = "us-ascii"
+            
+            Case contentencoding_ISO8859_1
+               l_Charset = "iso-8859-1"
+               
+            Case Else
+               Debug.Assert False  ' Unhandled content encoding
+               
+            End Select
+            
+            If Not stringIsEmptyOrWhitespaceOnly(l_Charset) Then
+               .Add "charset", l_Charset
+            End If
+            
+         End With
+      End With
+   End If
+   
+   ' Add or Replace Content-Length header if HTML build is finished
+   If Me.IsFinished Then
+      With mo_HttpHeader.AddOrReplace("Content-Length")
+         With .InitializeByKeyValuePairs
+            .Add "", Me.Length
+         End With
+      End With
+   End If
+End Sub

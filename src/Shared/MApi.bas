@@ -49,6 +49,22 @@ Private Declare Function GetModuleFileName Lib "kernel32.dll" Alias "GetModuleFi
 ' Unicode Command Line handling
 Private Declare Function GetCommandLineW Lib "kernel32.dll" () As Long
 
+Public Declare Function apiWideCharToMultiByte Lib "kernel32" Alias "WideCharToMultiByte" (ByVal CodePage As Long, _
+                                                            ByVal dwFlags As Long, _
+                                                            ByVal lpWideCharStr As Long, _
+                                                            ByVal cchWideChar As Long, _
+                                                            ByVal lpMultiByteStr As Long, _
+                                                            ByVal cchMultiByte As Long, _
+                                                            ByVal lpDefaultChar As Long, _
+                                                            lpUsedDefaultChar As Long) As Long
+                    
+Public Declare Function apiMultiByteToWideChar Lib "kernel32" Alias "MultiByteToWideChar" (ByVal CodePage As Long, _
+                                                            ByVal dwFlags As Long, _
+                                                            ByVal lpWideCharStr As Long, _
+                                                            ByVal cchWideChar As Long, _
+                                                            ByVal lpMultiByteStr As Long, _
+                                                            ByVal cchMultiByte As Long) As Long
+
 ' Mutex API related
 Public Const SYNCHRONIZE As Long = &H100000
 Public Const ERROR_ALREADY_EXISTS As Long = 183&

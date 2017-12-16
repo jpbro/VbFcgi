@@ -39,7 +39,8 @@ Public Event SendBytes(ByVal p_RequestId As Long, pa_Bytes() As Byte)
 Public Event SendError(ByVal p_RequestId As Long, ByVal p_ErrorNumber As Long, ByVal p_ErrorDescription As String)
 Public Event SendFinished(ByVal p_RequestId As Long)
 
-Private mo_Builders As VbFcgiLib.CBuilders
+Private WithEvents mo_Builders As VbFcgiLib.CBuilders
+Attribute mo_Builders.VB_VarHelpID = -1
 
 Private m_RequestId As Long
 Private m_Finished As Boolean
@@ -59,6 +60,8 @@ Public Sub WriteBytes(pa_Bytes() As Byte)
       
    If m_Finished Then Err.Raise 5, , "FCGI application finished."
    
+   apiOutputDebugString "Sending " & arraySize(pa_Bytes) & " bytes upstream."
+   
    RaiseEvent SendBytes(m_RequestId, pa_Bytes)
 End Sub
 
@@ -76,5 +79,18 @@ Public Sub Finished()
    
    m_Finished = True
    
+   apiOutputDebugString "Request #" & m_RequestId & " is finished."
+   
    RaiseEvent SendFinished(m_RequestId)
+End Sub
+
+Private Sub mo_Builders_Finished()
+   apiOutputDebugString "In mo_Builders_Finished for " & m_RequestId
+
+   With mo_Builders.Builder
+      Me.WriteBytes .HttpHeader.Content
+      Me.WriteBytes .Content
+   End With
+   
+   Me.Finished
 End Sub

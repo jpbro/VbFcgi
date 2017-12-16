@@ -60,6 +60,8 @@ Private Sub IFcgiApp_ProcessRequest(po_Request As VbFcgiLib.CFcgiRequest, po_Res
    Dim ii As Long
    
    Dim lo_Header As vbRichClient5.cStringBuilder
+   Dim lo_IBuilder As VbFcgiLib.IBuilder
+   Dim lo_Html As VbFcgiLib.CBuilderHtml
    Dim l_Title As String
    Dim l_SubTitle As String
    Dim l_SubTitleExample As String
@@ -83,7 +85,11 @@ Private Sub IFcgiApp_ProcessRequest(po_Request As VbFcgiLib.CFcgiRequest, po_Res
    l_HttpHost = po_Request.Fcgi.Params.ValueByEnum(stdparam_HttpHost)
    
    ' Build the HTML portion of the HTTP response
-   With po_Response.Builders.Html
+   
+   ' Initialize the HTML builder/helper
+   Set lo_Html = po_Response.Builders.Builder(builder_Html)
+   
+   With lo_Html
       .AppendDocType htmldoctype_Html5
       
       .OpenTags "html"
@@ -92,7 +98,7 @@ Private Sub IFcgiApp_ProcessRequest(po_Request As VbFcgiLib.CFcgiRequest, po_Res
             
       ' *** START DEMONSTRATION OF QUERY PARAMETER HANDLING
       If po_Request.Http.QueryParameters.Exists("title") Then
-         l_Title = po_Response.Builders.Html.EncodeEntities(po_Request.Http.QueryParameters("title"))
+         l_Title = lo_Html.EncodeEntities(po_Request.Http.QueryParameters("title"))
       End If
       ' *** END DEMONSTRATION OF QUERY PARAMETER HANDLING
       If stringIsEmptyOrWhitespaceOnly(l_Title) Then
@@ -170,33 +176,15 @@ Private Sub IFcgiApp_ProcessRequest(po_Request As VbFcgiLib.CFcgiRequest, po_Res
       
       ' Close all open tags in reverse order
       .CloseAllOpenedTags
+            
+      ' Add cookies to HTTP header
+      Set lo_IBuilder = lo_Html
+      lo_IBuilder.HttpHeader.Append po_Request.Http.Cookies.CookieHeaders
       
-      ' Finish building HTML and convert to UTF-8
-      .Finished contentencoding_UTF8
+      ' Finish building HTML, encode as UTF-8 and write it back upstream
+      .Finish contentencoding_UTF8
    End With
       
-   ' Build HTTP header
-   Set lo_Header = libRc5Factory.C.StringBuilder
-   With lo_Header
-      ' Build the HTTP header portion of the response
-      .AppendNL "Content-Type: text/html; charset=utf-8"
-      .AppendNL "Content-Length: " & po_Response.Builders.Html.Length
-      .Append po_Request.Http.Cookies.CookieHeaders
-      .Append vbNewLine
-      
-      apiOutputDebugString "HTTP Header: " & vbNewLine & .ToString
-   End With
-
-   ' Write bytes upstream
-   ' Write HTTP Header
-   po_Response.WriteBytes lo_Header.ToUTF8
-
-   ' Write HTML content
-   po_Response.WriteBytes po_Response.Builders.Html.Content
-
-   ' Signal that we are finished with the request/response
-   po_Response.Finished
-
    Exit Sub
 
 ErrorHandler:

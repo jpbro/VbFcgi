@@ -87,7 +87,7 @@ Public Function fcgiFlushStdOut(po_TcpServer As vbRichClient5.cTCPServer, ByVal 
       If po_StdOut.HasUnflushedContent Then
          Do
             la_Content = po_StdOut.NextContentChunk
-            l_Len = UBound(la_Content) + 1
+            l_Len = arraySize(la_Content)
             
             If po_StdOut.HasUnflushedContent Then
                l_Padding = 0
@@ -187,7 +187,7 @@ Public Function fcgiSendStdErr(po_TcpServer As vbRichClient5.cTCPServer, ByVal p
    
    ' Reverse integer values
    l_RequestId = apiNtohs(p_RequestId)
-   l_ContentLen = apiNtohs(UBound(la_Content) + 1)
+   l_ContentLen = apiNtohs(arraySize(la_Content))
    
    ' Build STDERR record
    la_Record(0) = 1

@@ -66,7 +66,7 @@ Public Sub AppendContent(pa_Bytes As Variant)
    If Me.State = fcgistdoutstate_Built Then Err.Raise 5, , "Can't append content to built STDOUT"
    Me.State = fcgistdoutstate_Building
       
-   l_Len = UBound(pa_Bytes) + 1
+   l_Len = arraySize(pa_Bytes)
    apiOutputDebugString "Appending content to STDOUT. Length: " & l_Len
    
    m_ContentLength = m_ContentLength + l_Len
