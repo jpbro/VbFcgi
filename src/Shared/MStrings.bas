@@ -182,12 +182,12 @@ Public Function stringVbToMultiByteCodePage(ByVal p_String As String, ByVal p_Co
    Dim l_BufferLen As Long
    Dim la_Buffer() As Byte
    
-   l_BufferLen = apiWideCharToMultiByte(p_ConvertToCodePage, 0, StrPtr(p_String), Len(p_String), 0, 0, 0, 0)
+   l_BufferLen = apiWideCharToMultiByte(p_ConvertToCodePage, 0, StrPtr(p_String), Len(p_String), 0, 0, 0, ByVal 0&)
 
    If l_BufferLen > 0 Then
       ReDim la_Buffer(l_BufferLen - 1)
       
-      apiWideCharToMultiByte p_ConvertToCodePage, 0, StrPtr(p_String), Len(p_String), VarPtr(la_Buffer(0)), l_BufferLen, 0, 0
+      apiWideCharToMultiByte p_ConvertToCodePage, 0, StrPtr(p_String), Len(p_String), VarPtr(la_Buffer(0)), l_BufferLen, 0, ByVal 0&
    End If
    
    stringVbToMultiByteCodePage = la_Buffer
@@ -222,5 +222,13 @@ End Function
 
 Public Function stringIso88591ToVb(pa_Bytes() As Byte) As String
    stringIso88591ToVb = stringMultiByteCodePageToVb(pa_Bytes, 28591)
+End Function
+
+Public Function stringUtf8ToVb(pa_Bytes() As Byte) As String
+   stringUtf8ToVb = stringMultiByteCodePageToVb(pa_Bytes, 65001)
+End Function
+
+Public Function stringVbToUtf8(p_String As String) As Byte()
+   stringVbToUtf8 = stringVbToMultiByteCodePage(p_String, 65001)
 End Function
 
