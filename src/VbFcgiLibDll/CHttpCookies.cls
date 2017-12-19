@@ -74,7 +74,7 @@ Public Property Get CookieHeaders() As String
          
          If lo_Cookie.ExpiresGmt > 0 Then
             .Append "; Expires="
-            .Append dateUtcToCookieDate(lo_Cookie.ExpiresGmt)
+            .Append dateGmtToCookieDate(lo_Cookie.ExpiresGmt)
          End If
          
          If lo_Cookie.Secure Then

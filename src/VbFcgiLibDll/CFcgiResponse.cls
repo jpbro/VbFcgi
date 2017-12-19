@@ -68,6 +68,8 @@ End Sub
 Public Sub Error(ByVal p_ErrorNumber As Long, ByVal p_ErrorDescription As String)
    ' Call this method from your FCGI app to send an error back to the web server
    
+   apiOutputDebugString "FCGI Response error: " & p_ErrorNumber & " " & p_ErrorDescription
+   
    If m_Finished Then Err.Raise 5, , "FCGI application finished."
    
    RaiseEvent SendError(m_RequestId, p_ErrorNumber, p_ErrorDescription)
@@ -85,11 +87,40 @@ Public Sub Finished()
 End Sub
 
 Private Sub mo_Builders_Finished()
+   Dim lo_Builder As VbFcgiLib.IBuilder
+   Dim lo_File As VbFcgiLib.CBuilderFile
+   
    apiOutputDebugString "In mo_Builders_Finished for " & m_RequestId
 
-   With mo_Builders.Builder
+   Set lo_Builder = mo_Builders.Builder
+   With lo_Builder
+      apiOutputDebugString "Sending HTTP header."
+      
       Me.WriteBytes .HttpHeader.Content
-      Me.WriteBytes .Content
+      
+      If TypeOf lo_Builder Is VbFcgiLib.CBuilderFile Then
+         apiOutputDebugString "Sending file builder content."
+         
+         Set lo_File = lo_Builder
+                     
+         ' Send file content or 304 NOT MODIFIED
+         Do While Not lo_File.IsFinishedReading
+            ' File content gets sent in chunks, hence the loop
+            
+            apiOutputDebugString "Sending file content chunk #" & lo_File.ChunkIndex + 1 & " of " & lo_File.ChunkCount
+            
+            If .Length > 0 Then
+               Me.WriteBytes .Content
+            End If
+         Loop
+         
+      Else
+         apiOutputDebugString "Sending builder content."
+         
+         If .Length > 0 Then
+            Me.WriteBytes .Content
+         End If
+      End If
    End With
    
    Me.Finished

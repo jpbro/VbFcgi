@@ -23,16 +23,40 @@ Option Explicit
 ' OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 ' SOFTWARE.
 
-Public Function dateUtcToCookieDate(ByVal p_GmtDate As Date) As String
-   dateUtcToCookieDate = "Wdy, DD Mon YYYY HH:MM:SS GMT"
+Public Function dateGmtToCookieDate(ByVal p_GmtDate As Date) As String
+   dateGmtToCookieDate = "Wdy, DD Mon YYYY HH:MM:SS GMT"
    
-   Mid$(dateUtcToCookieDate, 1, 3) = CookieWeekday(Weekday(p_GmtDate, vbSunday))
-   Mid$(dateUtcToCookieDate, 6, 2) = Format$(Day(p_GmtDate), "00")
-   Mid$(dateUtcToCookieDate, 9, 3) = CookieMonth(Month(p_GmtDate))
-   Mid$(dateUtcToCookieDate, 13, 4) = Format$(Year(p_GmtDate), "0000")
-   Mid$(dateUtcToCookieDate, 18, 2) = Format$(Hour(p_GmtDate), "00")
-   Mid$(dateUtcToCookieDate, 21, 2) = Format$(Minute(p_GmtDate), "00")
-   Mid$(dateUtcToCookieDate, 24, 2) = Format$(Second(p_GmtDate), "00")
+   Mid$(dateGmtToCookieDate, 1, 3) = CookieWeekday(Weekday(p_GmtDate, vbSunday))
+   Mid$(dateGmtToCookieDate, 6, 2) = Format$(Day(p_GmtDate), "00")
+   Mid$(dateGmtToCookieDate, 9, 3) = CookieMonth(Month(p_GmtDate))
+   Mid$(dateGmtToCookieDate, 13, 4) = Format$(Year(p_GmtDate), "0000")
+   Mid$(dateGmtToCookieDate, 18, 2) = Format$(Hour(p_GmtDate), "00")
+   Mid$(dateGmtToCookieDate, 21, 2) = Format$(Minute(p_GmtDate), "00")
+   Mid$(dateGmtToCookieDate, 24, 2) = Format$(Second(p_GmtDate), "00")
+End Function
+
+Public Function dateVbLocalDateTimeToIso8601Utc(ByVal p_LocalDate As Date) As String
+   Dim lt_LocalSystemTime As SYSTEMTIME
+   Dim lt_UtcSystemTime As SYSTEMTIME
+   
+   With lt_LocalSystemTime
+      .wYear = Year(p_LocalDate)
+      .wMonth = Month(p_LocalDate)
+      .wDay = Day(p_LocalDate)
+      .wHour = Hour(p_LocalDate)
+      .wMinute = Minute(p_LocalDate)
+      .wSecond = Second(p_LocalDate)
+   End With
+   
+   apiTzSpecificLocalTimeToSystemTime 0, VarPtr(lt_LocalSystemTime), VarPtr(lt_UtcSystemTime)
+   
+   dateVbLocalDateTimeToIso8601Utc = "0000-00-00T00:00:00Z"
+   Mid$(dateVbLocalDateTimeToIso8601Utc, 1, 4) = Format$(lt_UtcSystemTime.wYear, "0000")
+   Mid$(dateVbLocalDateTimeToIso8601Utc, 6, 2) = Format$(lt_UtcSystemTime.wMonth, "00")
+   Mid$(dateVbLocalDateTimeToIso8601Utc, 9, 2) = Format$(lt_UtcSystemTime.wDay, "00")
+   Mid$(dateVbLocalDateTimeToIso8601Utc, 12, 2) = Format$(lt_UtcSystemTime.wHour, "00")
+   Mid$(dateVbLocalDateTimeToIso8601Utc, 15, 2) = Format$(lt_UtcSystemTime.wMinute, "00")
+   Mid$(dateVbLocalDateTimeToIso8601Utc, 18, 2) = Format$(lt_UtcSystemTime.wSecond, "00")
 End Function
 
 Private Function CookieMonth(ByVal p_OneBasedMonthIndex As Long) As String

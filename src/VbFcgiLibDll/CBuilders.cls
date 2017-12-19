@@ -49,11 +49,11 @@ Public Enum e_BuilderType
    [_builder_NotInitialized] = 0
    
    builder_Html = 1 ' HTML string builder/helper
+   builder_File
    
    ' Not supported yet:
    'builder_Json  ' JSON string builder/helper
    'builder_Xml   ' XML string builder/helper
-   'builder_File  ' Pass a file path and it will be sent upstream
    'builder_Raw   ' Raw socket to write whatever you want to
 End Enum
 
@@ -72,7 +72,12 @@ Public Function Builder(Optional ByVal p_InitializeBuilderType As VbFcgiLib.e_Bu
    
       Select Case p_InitializeBuilderType
       Case builder_Html
+         ' Requested an HTML builder/helper
          Set mo_Builder = New VbFcgiLib.CBuilderHtml
+         
+      Case builder_File
+         ' Requested a file builder/helper
+         Set mo_Builder = New VbFcgiLib.CBuilderFile
          
       Case Else
          Err.Raise 5, , "Unknown builder type: " & p_InitializeBuilderType

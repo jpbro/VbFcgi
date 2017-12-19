@@ -84,6 +84,20 @@ Public Declare Function apiCreateMutex Lib "kernel32.dll" Alias "CreateMutexW" (
 Public Declare Function apiOpenMutex Lib "kernel32.dll" Alias "OpenMutexW" (ByVal dwDesiredAccess As Long, ByVal bInheritHandle As Long, ByVal lpName As Long) As Long
 Public Declare Function apiCloseHandle Lib "kernel32.dll" Alias "CloseHandle" (ByVal hObject As Long) As Long
 
+' Date & Time functions
+Public Type SYSTEMTIME
+  wYear As Integer
+  wMonth As Integer
+  wDayOfWeek As Integer
+  wDay As Integer
+  wHour As Integer
+  wMinute As Integer
+  wSecond As Integer
+  wMilliseconds As Integer
+End Type
+
+Public Declare Function apiTzSpecificLocalTimeToSystemTime Lib "kernel32.dll" Alias "TzSpecificLocalTimeToSystemTime" (ByVal lpTzData As Long, ByVal lpLocalSystemTime As Long, ByVal lpUtcSystemTime As Long) As Long
+
 Public Function apiExePath() As String
    apiExePath = String$(MAX_PATH, 0)
    
