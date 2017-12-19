@@ -522,175 +522,191 @@ Private Sub mo_ResponseTimer_Timer()
 
 40       mo_ResponseTimer.Enabled = False
 
-50       If mo_ActiveRequests Is Nothing Then GoTo Cleanup
-60       If mo_ActiveRequests.Count = 0 Then GoTo Cleanup
+50       apiOutputDebugString "In mo_ResponseTimer_Timer."
 
-70       l_StartedLoopAt = libRc5Factory.C.HPTimer
+60       If mo_ActiveRequests Is Nothing Then GoTo Cleanup
+70       If mo_ActiveRequests.Count = 0 Then GoTo Cleanup
+
+80       l_StartedLoopAt = libRc5Factory.C.HPTimer
          
-80       Do
-90          For Each lo_Upstream In mo_ActiveRequests
-100            If lo_Upstream.State = fcgireqstate_Error Then
+90       Do
+100         For Each lo_Upstream In mo_ActiveRequests
+110            If lo_Upstream.State = fcgireqstate_Error Then
                   ' Error occurred, send STDERR
-110               SendStdErrByRequestNoErr lo_Upstream
-120               l_ProcessedRequest = True
+120               SendStdErrByRequestNoErr lo_Upstream
+130               l_ProcessedRequest = True
                   
-130            Else
+140            Else
                   ' No error, check for ready-state of request
-140               If lo_Upstream.State <> fcgireqstate_Busy Then
-150                  If lo_Upstream.StdOut.State = fcgistdoutstate_Built Then
+150               If lo_Upstream.State <> fcgireqstate_Busy Then
+160                  Select Case lo_Upstream.StdOut.State
+                     Case fcgistdoutstate_Built, fcgistdoutstate_Building
                         ' STDOUT build has been finished, SO:
                         ' Flush the remaining buffer, send the end request,
                         ' and remove the object from the active collection
-160                     apiOutputDebugString "Sending STDOUT for request #" & lo_Upstream.Id
+170                     apiOutputDebugString "Sending STDOUT for request #" & lo_Upstream.Id
                
-170                     If fcgiFlushStdOut(mo_TcpServer, lo_Upstream.SocketNumber, lo_Upstream.Id, lo_Upstream.StdOut, True) Then
+180                     If fcgiFlushStdOut(mo_TcpServer, lo_Upstream.SocketNumber, lo_Upstream.Id, lo_Upstream.StdOut, (lo_Upstream.StdOut.State = fcgistdoutstate_Built)) Then
                            ' Flushed - send FCGI_END_REQUEST
-180                        fcgiSendEndRequest mo_TcpServer, lo_Upstream.SocketNumber, lo_Upstream.Id, 0, 0
-190                     End If
+190                        If lo_Upstream.StdOut.State = fcgistdoutstate_Built Then
+200                           If Not lo_Upstream.StdOut.HasUnflushedContent Then
+210                              fcgiSendEndRequest mo_TcpServer, lo_Upstream.SocketNumber, lo_Upstream.Id, 0, 0
+220                           End If
+230                        End If
+240                     End If
                         
-200                     l_ProcessedRequest = True
+250                     l_ProcessedRequest = True
                         
-210                     RemoveRequestNoErr lo_Upstream
-                     
-220                  Else
+260                     If lo_Upstream.StdOut.State = fcgistdoutstate_Built Then
+270                        If Not lo_Upstream.StdOut.HasUnflushedContent Then
+280                           RemoveRequestNoErr lo_Upstream
+290                        End If
+300                     End If
+                        
+310                  Case Else
                         ' STDOUT is not finished being built yet
-230                     Select Case lo_Upstream.State
+320                     Select Case lo_Upstream.State
                         Case fcgireqstate_Initialized, fcgireqstate_Ready
-
-240                        If lo_Upstream.Params.State = paramstate_Built Then
+330                        If lo_Upstream.Params.State = paramstate_Built Then
                               ' Parameters have all been received, check for STDIN completion
-250                           On Error Resume Next
+340                           On Error Resume Next
                               ' Trap error if no ContentLength sent
-260                           l_ContentLengthCgi = 0
-270                           l_ContentLengthCgi = lo_Upstream.Params.ValueByEnum(stdparam_ContentLength)
-280                           On Error GoTo ErrorHandler
+350                           l_ContentLengthCgi = 0
+360                           l_ContentLengthCgi = lo_Upstream.Params.ValueByEnum(stdparam_ContentLength)
+370                           On Error GoTo ErrorHandler
                               
-290                           If l_ContentLengthCgi > 0 Then
-300                              If lo_Upstream.Stdin.State = fcgistdinstate_Built Then
-310                                 l_ContentLengthStdin = lo_Upstream.Stdin.ContentLength
-320                                 On Error GoTo ErrorHandler
+380                           If l_ContentLengthCgi > 0 Then
+390                              If lo_Upstream.Stdin.State = fcgistdinstate_Built Then
+400                                 l_ContentLengthStdin = lo_Upstream.Stdin.ContentLength
+410                                 On Error GoTo ErrorHandler
                                     
-330                                 If l_ContentLengthStdin <> l_ContentLengthCgi Then
+420                                 If l_ContentLengthStdin <> l_ContentLengthCgi Then
                                        ' Completed STDIN length does NOT match CGI ContentLength
-340                                    Err.Raise fcgierr_ContentLengthMismatch, , "CGI content length (" & l_ContentLengthCgi & ") does not match STDIN content length (" & l_ContentLengthStdin & ")"
-350                                 End If
-360                              Else
-370                                 Err.Raise fcgierr_NotReadyForResponse, , "Waiting on STDIN for data."
-380                              End If
-390                           End If
+430                                    Err.Raise fcgierr_ContentLengthMismatch, , "CGI content length (" & l_ContentLengthCgi & ") does not match STDIN content length (" & l_ContentLengthStdin & ")"
+440                                 End If
+450                              Else
+460                                 Err.Raise fcgierr_NotReadyForResponse, , "Waiting on STDIN for data."
+470                              End If
+480                           End If
                               
-400                           apiOutputDebugString "Building response for request ID #" & lo_Upstream.Id & ". Total requests in queue: " & mo_ActiveRequests.Count
+490                           apiOutputDebugString "Building response for request ID #" & lo_Upstream.Id & ". Total requests in queue: " & mo_ActiveRequests.Count
                               
-410                           lo_Upstream.State = fcgireqstate_Busy
+500                           lo_Upstream.State = fcgireqstate_Busy
                                                       
-420                           l_ScriptName = lo_Upstream.Params.ValueByEnum(stdparam_ScriptName)
+510                           l_ScriptName = lo_Upstream.Params.ValueByEnum(stdparam_ScriptName)
                               
-430                           Select Case Left$(l_ScriptName, 1)
+520                           Select Case Left$(l_ScriptName, 1)
                               Case "\", "/"
-440                              l_ScriptName = Mid$(l_ScriptName, 2)
-450                           End Select
+530                              l_ScriptName = Mid$(l_ScriptName, 2)
+540                           End Select
                               
-460                           If InStr(1, l_ScriptName, "\") > 0 Then Err.Raise 70, , "Permission denied on script sub folders."
-470                           If InStr(1, l_ScriptName, "/") > 0 Then Err.Raise 70, , "Permission denied on script sub folders."
+550                           If InStr(1, l_ScriptName, "\") > 0 Then Err.Raise 70, , "Permission denied on script sub folders."
+560                           If InStr(1, l_ScriptName, "/") > 0 Then Err.Raise 70, , "Permission denied on script sub folders."
                               
-480                           l_AppKey = LCase$(l_ScriptName)
+570                           l_AppKey = LCase$(l_ScriptName)
                               
-490                           If Not envDebugMode Then
+580                           If Not envDebugMode Then
                                  ' Only allow access to apps with a .fcgi extension when not in debug mode.
-500                              If Right$(l_AppKey, Len(".fcgi")) <> ".fcgi" Then
-510                                 Err.Raise 70, , "Permission denied to access libraries with a .fcgi file extesion. Passed script name: " & l_ScriptName
-520                              End If
-530                           End If
+590                              If Right$(l_AppKey, Len(".fcgi")) <> ".fcgi" Then
+600                                 Err.Raise 70, , "Permission denied to access libraries with a .fcgi file extesion. Passed script name: " & l_ScriptName
+610                              End If
+620                           End If
                               
-540                           If mo_FcgiApps.Exists(l_AppKey) Then
-550                              Set lo_FcgiApp = mo_FcgiApps.Item(l_AppKey)
-560                           Else
-                                 apiOutputDebugString "Creating CFcgiApp from: " & pathBin & l_ScriptName
+630                           If mo_FcgiApps.Exists(l_AppKey) Then
+640                              Set lo_FcgiApp = mo_FcgiApps.Item(l_AppKey)
+650                           Else
+660                              apiOutputDebugString "Creating CFcgiApp from: " & pathBin & l_ScriptName
                                  
-570                              Set lo_FcgiApp = libRc5Factory.RegFree.GetInstanceEx(pathBin & l_ScriptName, "CFcgiApp")
-580                              mo_FcgiApps.Add lo_FcgiApp, l_AppKey
-590                           End If
+670                              Set lo_FcgiApp = libRc5Factory.RegFree.GetInstanceEx(pathBin & l_ScriptName, "CFcgiApp")
+680                              mo_FcgiApps.Add lo_FcgiApp, l_AppKey
+690                           End If
                               
-600                           Set lo_FcgiRequest = New VbFcgiLib.CFcgiRequest
-610                           Set lo_FcgiRequest.FcgiUpstream = lo_Upstream
+700                           Set lo_FcgiRequest = New VbFcgiLib.CFcgiRequest
+710                           Set lo_FcgiRequest.FcgiUpstream = lo_Upstream
                               
-620                           Set mo_ActiveDownstream = lo_Upstream.FcgiResponse
+720                           Set mo_ActiveDownstream = lo_Upstream.FcgiResponse
                               
-630                           lo_FcgiApp.ProcessRequest lo_FcgiRequest, mo_ActiveDownstream
-640                        End If
-650                     End Select
-660                  End If
-670               End If
-680            End If
+730                           lo_FcgiApp.ProcessRequest lo_FcgiRequest, mo_ActiveDownstream
+740                        End If
+750                     End Select
+760                  End Select
+770               End If
+780            End If
                
                ' Check to see if we've surpassed the response loop threshold
-690            l_LoopTime = libRc5Factory.C.HPTimer - l_StartedLoopAt
+790            l_LoopTime = libRc5Factory.C.HPTimer - l_StartedLoopAt
                
-700            Select Case l_LoopTime
+800            Select Case l_LoopTime
                Case Is < 0, Is > mo_ResponseTimer.Interval * 2
                   ' Short-circuit subsequent responses if time for
                   ' previous response building/sending has gone over our threshold
-710               Exit For
-720            End Select
+810               apiOutputDebugString "Response timer exceeded allotted time. Will come resume later."
+                  
+820               Exit For
+830            End Select
                
-730         Next lo_Upstream
+840            apiOutputDebugString "In response loop."
+               
+850         Next lo_Upstream
             
             ' Keep looping if we have any active requests and we have exceed our response loop threshold
-740      Loop While l_ProcessedRequest And (l_LoopTime < mo_ResponseTimer.Interval * 2) And (mo_ActiveRequests.Count > 0)
+860      Loop While l_ProcessedRequest And (l_LoopTime < mo_ResponseTimer.Interval * 2) And (mo_ActiveRequests.Count > 0)
          
-750      l_ErrNumber = 0
-760      l_ErrDesc = ""
+870      l_ErrNumber = 0
+880      l_ErrDesc = ""
          
 Cleanup:
-770      On Error Resume Next
+890      On Error Resume Next
 
          ' Check for error
-780      If l_ErrNumber <> 0 Then
+900      If l_ErrNumber <> 0 Then
             ' Handle error
             ' If the error is fcgierr_ResponseBuilderNotReady, then we'll try to generate the response again later
             ' Otherwise, we'll kill the request
             
-790         If l_ErrNumber = fcgierr_NotReadyForResponse Then
+910         If l_ErrNumber = fcgierr_NotReadyForResponse Then
                ' Conditions were not met for the response to be built, try again later
-800            If lo_Upstream Is Nothing Then
+920            If lo_Upstream Is Nothing Then
                   ' Sanity check - shouldn't get here.
-810               apiOutputDebugString "Sanity Check in mo_ResponseTimer_Timer. Request Object = Nothing after handling fcgierr_ResponseBuilderNotReady."
+930               apiOutputDebugString "Sanity Check in mo_ResponseTimer_Timer. Request Object = Nothing after handling fcgierr_ResponseBuilderNotReady."
                   
-820               Debug.Assert False
-830            Else
+940               Debug.Assert False
+950            Else
                   ' Return the request to the Ready state
-840               lo_Upstream.State = fcgireqstate_Ready
-850            End If
+960               lo_Upstream.State = fcgireqstate_Ready
+970            End If
                
-860         Else
-870            apiOutputDebugString "Error in response timer event, line #" & l_Erl & ": " & l_ErrNumber & " " & l_ErrDesc
+980         Else
+990            apiOutputDebugString "Error in response timer event, line #" & l_Erl & ": " & l_ErrNumber & " " & l_ErrDesc
             
-880            If Not lo_Upstream Is Nothing Then
-890               lo_Upstream.SetError l_ErrNumber, l_ErrDesc
+1000           If Not lo_Upstream Is Nothing Then
+1010              lo_Upstream.SetError l_ErrNumber, l_ErrDesc
                   
-900               SendStdErrByRequestNoErr lo_Upstream
-910            End If
-920         End If
-930      End If
+1020              SendStdErrByRequestNoErr lo_Upstream
+1030           End If
 
-940      s_Busy = False
+1040           RemoveRequestNoErr lo_Upstream
+1050        End If
+1060     End If
+
+1070     s_Busy = False
          
          ' Restart timer if we have any remaining active responses
-950      If Not mo_ActiveRequests Is Nothing Then
-960         If mo_ActiveRequests.Count > 0 Then
-970            mo_ResponseTimer.Enabled = True
-980         End If
-990      End If
+1080     If Not mo_ActiveRequests Is Nothing Then
+1090        If mo_ActiveRequests.Count > 0 Then
+1100           mo_ResponseTimer.Enabled = True
+1110        End If
+1120     End If
          
-1000     Exit Sub
+1130     Exit Sub
 
 ErrorHandler:
          ' Record error information, and resume at cleanup
-1010     l_Erl = Erl
-1020     l_ErrNumber = Err.Number
-1030     l_ErrDesc = Err.Description
+1140     l_Erl = Erl
+1150     l_ErrNumber = Err.Number
+1160     l_ErrDesc = Err.Description
          
-1040     Resume Cleanup
+1170     Resume Cleanup
 End Sub
 
 Private Sub SendStdErrByInfoNoErr(ByVal p_SocketNumber As Long, ByVal p_RequestId As Integer, ByVal p_ErrorNumber As Long, ByVal p_ErrorDescription As String)

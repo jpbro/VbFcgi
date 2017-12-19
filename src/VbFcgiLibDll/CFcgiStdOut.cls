@@ -59,12 +59,18 @@ Public Sub AppendContent(pa_Bytes As Variant)
    Dim l_Len As Long
    Dim l_Mod As Long
    Dim ii As Long
+   Dim l_Bytes As Variant
    Dim la_Bytes() As Byte
+   Dim l_DestSafeArrayPointer As Long
    Dim l_SafeArrayPointer As Long
+   Dim l_SafeArray As Long
    Dim l_DataPointer As Long
+   Dim lt_SafeArray As SAFEARRAY1D
    
    If Me.State = fcgistdoutstate_Built Then Err.Raise 5, , "Can't append content to built STDOUT"
    Me.State = fcgistdoutstate_Building
+      
+   apiOutputDebugString "Before queuing content.  Current chunks: " & mo_StdOut.Count & ", Bytes: " & m_ContentLength
       
    l_Len = arraySize(pa_Bytes)
    apiOutputDebugString "Appending content to STDOUT. Length: " & l_Len
@@ -74,32 +80,48 @@ Public Sub AppendContent(pa_Bytes As Variant)
    If l_Len > gc_MaxStdoutBufferChunkSize Then
       ' Length of passed content larger than our maximum STDOUT buffer chunk size
       ' So split into smaller chunks and queue those chunks
-      
+      apiOutputDebugString "Content to append needs to be split into smaller chunks."
+            
       ReDim la_Bytes(0 To gc_MaxStdoutBufferChunkSize - 1)
+      l_Bytes = la_Bytes
       
       apiCopyMemory l_SafeArrayPointer, ByVal VarPtr(pa_Bytes) + 8, 4
+      If l_SafeArrayPointer = 0 Then Err.Raise vbObjectError, , "Could not retrieve safe array pointer."
+      apiCopyMemory l_SafeArray, ByVal l_SafeArrayPointer, 4
+      apiCopyMemory lt_SafeArray, ByVal l_SafeArray, LenB(lt_SafeArray)
       
-      If apiSafeArrayAccessData(l_SafeArrayPointer, l_DataPointer) = 0 Then
+      If apiSafeArrayAccessData(l_SafeArray, l_DataPointer) = 0 Then
+         If l_DataPointer = 0 Then Err.Raise vbObjectError, , "Could not retrieve safe array data pointer!"
+         
          For ii = 0 To (l_Len \ gc_MaxStdoutBufferChunkSize) - 1
-            apiOutputDebugString "Appending chunk. Length: " & gc_MaxStdoutBufferChunkSize
+            apiOutputDebugString "Appending chunk #" & ii & ". Length: " & gc_MaxStdoutBufferChunkSize
             apiOutputDebugString "Chunk Start: " & (gc_MaxStdoutBufferChunkSize * ii)
             
             apiCopyMemory la_Bytes(0), ByVal l_DataPointer + (gc_MaxStdoutBufferChunkSize * ii), gc_MaxStdoutBufferChunkSize
             
+            apiOutputDebugString "Queueing chunk #" & ii
+            
             mo_StdOut.Queue la_Bytes
          Next ii
-         
+                           
+         ' Append final chunk
          l_Mod = l_Len Mod gc_MaxStdoutBufferChunkSize
+         
          If l_Mod > 0 Then
             apiOutputDebugString "Appending final chunk. Length: " & l_Mod
             
             ReDim la_Bytes(0 To l_Mod - 1)
             apiCopyMemory la_Bytes(0), ByVal l_DataPointer + (gc_MaxStdoutBufferChunkSize * ii), l_Mod
-      
+            
             mo_StdOut.Queue la_Bytes
          End If
          
-         apiSafeArrayUnaccessData l_SafeArrayPointer
+         ' Release array
+         apiSafeArrayUnaccessData l_SafeArray
+         
+      Else
+         ' Could not access safe array data
+         Err.Raise vbObjectError, , "Could not access safe array data! Last DLL Error: " & Err.LastDllError
       End If
       
    Else
@@ -107,7 +129,10 @@ Public Sub AppendContent(pa_Bytes As Variant)
       ' Queue the entire chunk
       
       mo_StdOut.Queue pa_Bytes
+   
    End If
+   
+   apiOutputDebugString "Queued content chunks: " & mo_StdOut.Count & ", Bytes: " & m_ContentLength
 End Sub
 
 Public Function HasUnflushedContent() As Boolean
@@ -120,10 +145,15 @@ End Function
 
 Public Function NextContentChunk() As Byte()
    If mo_StdOut.Count <= 0 Then Err.Raise vbObjectError, , "No unflushed content available."
+      
+   apiOutputDebugString "Getting content chunk. Total chunks: " & mo_StdOut.Count & ", bytes: " & m_ContentLength
    
    NextContentChunk = mo_StdOut.DeQueue
    
-   m_ContentLength = m_ContentLength - (UBound(NextContentChunk) + 1)
+   m_ContentLength = m_ContentLength - arraySize(NextContentChunk)
+   If m_ContentLength < 0 Then m_ContentLength = 0
+   
+   apiOutputDebugString "Remaining bytes to flush: " & m_ContentLength
 End Function
 
 Private Sub Class_Initialize()

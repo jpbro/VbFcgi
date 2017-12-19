@@ -25,6 +25,16 @@ Option Explicit
 
 ' This module is for WIN API declares and wrappers
 
+Public Type SAFEARRAY1D
+  cDims As Integer
+  fFeatures As Integer
+  cbElements As Long
+  cLocks As Long
+  pvData As Long
+  cElements1D As Long
+  lLbound1D As Long
+End Type
+
 ' API Calls for reversing order of integer and long byte content
 Public Declare Function apiNtohs Lib "wsock32.dll" Alias "ntohs" (ByVal a As Integer) As Integer
 Public Declare Function apiNtohl Lib "wsock32.dll" Alias "ntohl" (ByVal a As Long) As Long
@@ -39,8 +49,8 @@ Public Declare Sub apiCopyMemory Lib "kernel32.dll" Alias "RtlMoveMemory" (ByRef
 Public Declare Sub apiSleep Lib "kernel32.dll" Alias "Sleep" (ByVal dwMilliseconds As Long)
 
 ' Safe Array related
-Public Declare Function apiSafeArrayAccessData Lib "Oleaut32" Alias "SafeArrayAccessData" (ByVal psa As Long, pvData As Long) As Long
-Public Declare Function apiSafeArrayUnaccessData Lib "Oleaut32" Alias "SafeArrayUnaccessData" (ByVal psa As Long) As Long
+Public Declare Function apiSafeArrayAccessData Lib "oleaut32.dll" Alias "SafeArrayAccessData" (ByVal psa As Long, pvData As Long) As Long
+Public Declare Function apiSafeArrayUnaccessData Lib "oleaut32.dll" Alias "SafeArrayUnaccessData" (ByVal psa As Long) As Long
 
 ' App Path related
 Private Const MAX_PATH As Long = 260
