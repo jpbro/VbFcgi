@@ -86,3 +86,14 @@ Public Function libCrypt() As vbRichClient5.cCrypt
    Set libCrypt = so_Lib
 End Function
 
+Public Function libFso() As vbRichClient5.cFSO
+   Static so_Lib As vbRichClient5.cFSO
+   
+   If so_Lib Is Nothing Then
+      Set so_Lib = libRc5Factory.C.FSO
+   End If
+   
+   Set libFso = so_Lib
+End Function
+
+
