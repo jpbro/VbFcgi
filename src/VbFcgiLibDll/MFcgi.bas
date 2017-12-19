@@ -74,6 +74,14 @@ Public Function fcgiFlushStdOut(po_TcpServer As vbRichClient5.cTCPServer, ByVal 
    Dim la_Content() As Byte
    Dim l_Len As Integer
    Dim l_Padding As Byte
+   Dim l_StartedAt As Double
+   
+   apiOutputDebugString "In fcgiFlushStdOut."
+  
+   If po_TcpServer.ConnectionCount = 0 Then
+      apiOutputDebugString "No connections found in fcgiFlushStdOut. Short circuiting."
+      Exit Function
+   End If
    
    ReDim la_Record(7)
    
@@ -85,6 +93,8 @@ Public Function fcgiFlushStdOut(po_TcpServer As vbRichClient5.cTCPServer, ByVal 
    
    If Not po_StdOut Is Nothing Then
       If po_StdOut.HasUnflushedContent Then
+         l_StartedAt = libRc5Factory.C.HPTimer
+         
          Do
             la_Content = po_StdOut.NextContentChunk
             l_Len = arraySize(la_Content)
@@ -108,15 +118,15 @@ Public Function fcgiFlushStdOut(po_TcpServer As vbRichClient5.cTCPServer, ByVal 
                apiCopyMemory la_Record(4), l_Len, 2
                la_Record(6) = l_Padding
                
-               If po_TcpServer.SendData(p_Socket, VarPtr(la_Record(0)), UBound(la_Record) + 1) Then
+               If po_TcpServer.SendData(p_Socket, VarPtr(la_Record(0)), arraySize(la_Record)) Then
                   apiOutputDebugString "Flushed STDOUT record header."
                   
-                  If po_TcpServer.SendData(p_Socket, VarPtr(la_Content(0)), UBound(la_Content) + 1) Then
-                     apiOutputDebugString "Flushed STDOUT content. Length: " & (UBound(la_Content) + 1)
+                  If po_TcpServer.SendData(p_Socket, VarPtr(la_Content(0)), arraySize(la_Content)) Then
+                     apiOutputDebugString "Flushed STDOUT content. Length: " & arraySize(la_Content)
                      
                      If l_Padding <> 0 Then
                         ReDim la_Content(l_Padding - 1)
-                        If po_TcpServer.SendData(p_Socket, VarPtr(la_Content(0)), UBound(la_Content) + 1) Then
+                        If po_TcpServer.SendData(p_Socket, VarPtr(la_Content(0)), arraySize(la_Content)) Then
                            apiOutputDebugString "Flushed padding. Length: " & l_Padding
                            fcgiFlushStdOut = True
                         Else
@@ -131,19 +141,29 @@ Public Function fcgiFlushStdOut(po_TcpServer As vbRichClient5.cTCPServer, ByVal 
                      End If
                      
                   Else
-                     apiOutputDebugString "Could not flush content chunk. Length: " & (UBound(la_Content) + 1)
+                     apiOutputDebugString "Could not flush content chunk. Length: " & arraySize(UBound(la_Content))
                      fcgiFlushStdOut = False
                      Exit Do
                   End If
                Else
-                  apiOutputDebugString "Could not flush STDOUT record header. Length: " & (UBound(la_Record) + 1)
+                  apiOutputDebugString "Could not flush STDOUT record header. Length: " & arraySize(UBound(la_Record))
                   fcgiFlushStdOut = False
                   Exit Do
                End If
                
                Erase la_Content
             End If
-         Loop While po_StdOut.HasUnflushedContent
+            
+            Select Case libRc5Factory.C.HPTimer - l_StartedAt
+            Case Is < 0, Is > 0.5
+               apiOutputDebugString "fcgiFlushStdOut looped too long, leaving..."
+               
+               Exit Do
+            End Select
+            
+            apiOutputDebugString "In fcgiFlushStdOut loop."
+            
+         Loop While po_StdOut.HasUnflushedContent And fcgiFlushStdOut
          
          If Not fcgiFlushStdOut Then
             apiOutputDebugString "Failed to flush STDOUT."
@@ -156,6 +176,8 @@ Public Function fcgiFlushStdOut(po_TcpServer As vbRichClient5.cTCPServer, ByVal 
    End If
    
    If p_CloseStream Then
+      apiOutputDebugString "Closing stream in fcgiFlushStdOut."
+      
       ' Send closing STDOUT/STDERR record
       la_Record(4) = 0  ' ZERO LENGTH
       la_Record(5) = 0  ' ZERO LENGTH
@@ -171,6 +193,8 @@ Public Function fcgiFlushStdOut(po_TcpServer As vbRichClient5.cTCPServer, ByVal 
       
       fcgiFlushStdOut = True  ' We flushed something so return true
    End If
+
+   apiOutputDebugString "Leaving fcgiFlushStdOut."
 End Function
 
 Public Function fcgiSendStdErr(po_TcpServer As vbRichClient5.cTCPServer, ByVal p_Socket As Long, ByVal p_RequestId As Integer, ByVal p_ErrorNumber As Long, ByVal p_ErrorDescription As String) As Boolean
@@ -180,6 +204,13 @@ Public Function fcgiSendStdErr(po_TcpServer As vbRichClient5.cTCPServer, ByVal p
    Dim la_Record(7) As Byte
    Dim l_RequestId As Integer
    Dim l_ContentLen As Integer
+   
+   apiOutputDebugString "In fcgiSendStdErr."
+   
+   If po_TcpServer.ConnectionCount = 0 Then
+      apiOutputDebugString "No connections found in fcgiSendStdErr. Short circuiting."
+      Exit Function
+   End If
    
    la_Content = libCrypt.VBStringToUTF8(p_ErrorDescription)
    
@@ -196,21 +227,25 @@ Public Function fcgiSendStdErr(po_TcpServer As vbRichClient5.cTCPServer, ByVal p
    apiCopyMemory la_Record(4), l_ContentLen, 2
    la_Record(6) = 0
    la_Record(7) = l_Padding
-
-   po_TcpServer.SendData p_Socket, VarPtr(la_Record(0)), UBound(la_Record) + 1
-   po_TcpServer.SendData p_Socket, VarPtr(la_Content(0)), UBound(la_Content) + 1
-   If l_Padding > 0 Then
-      ReDim la_Content(l_Padding - 1)
-      po_TcpServer.SendData p_Socket, VarPtr(la_Content(0)), l_Padding
-   End If
    
-   ' Send empty STDERR record to close it
-   la_Record(4) = 0
-   la_Record(5) = 0
-   la_Record(6) = 0
-   la_Record(7) = 0
+   If po_TcpServer.SendData(p_Socket, VarPtr(la_Record(0)), UBound(la_Record) + 1) Then
+      If po_TcpServer.SendData(p_Socket, VarPtr(la_Content(0)), UBound(la_Content) + 1) Then
+         If l_Padding > 0 Then
+            ReDim la_Content(l_Padding - 1)
+            po_TcpServer.SendData p_Socket, VarPtr(la_Content(0)), l_Padding
+         End If
+      End If
+      
+      ' Send empty STDERR record to close it
+      la_Record(4) = 0
+      la_Record(5) = 0
+      la_Record(6) = 0
+      la_Record(7) = 0
+   
+      po_TcpServer.SendData p_Socket, VarPtr(la_Record(0)), UBound(la_Record) + 1
+   End If
 
-   po_TcpServer.SendData p_Socket, VarPtr(la_Record(0)), UBound(la_Record) + 1
+   apiOutputDebugString "Leaving fcgiSendStdErr."
 End Function
 
 Public Sub fcgiSendEndRequest(po_TcpServer As vbRichClient5.cTCPServer, ByVal p_Socket As Long, ByVal p_RequestId As Integer, ByVal p_ApplicationStatus As Long, ByVal p_ProtocolStatus As Byte)
@@ -218,6 +253,12 @@ Public Sub fcgiSendEndRequest(po_TcpServer As vbRichClient5.cTCPServer, ByVal p_
    Dim l_Len As Integer
    Dim la_Record() As Byte
    
+   apiOutputDebugString "In fcgiSendEndRequest."
+   
+   If po_TcpServer.ConnectionCount = 0 Then
+      apiOutputDebugString "No connections found in fcgiSendEndRequest. Short circuiting."
+      Exit Sub
+   End If
    ReDim la_Record(15)
    
    la_Record(0) = 1
@@ -243,6 +284,8 @@ Public Sub fcgiSendEndRequest(po_TcpServer As vbRichClient5.cTCPServer, ByVal p_
    Else
       apiOutputDebugString "Could not send End request."
    End If
+
+   apiOutputDebugString "Leaving fcgiSendEndRequest."
 End Sub
 
 
