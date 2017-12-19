@@ -72,6 +72,7 @@ Public Enum e_StandardParameters ' Enum of standard CGI parameters for easier re
    stdparam_HttpConnection
    stdparam_HttpCacheControl
    stdparam_HttpCookie
+   stdparam_HttpIfNoneMatch
 End Enum
 
 Private mo_Params As vbRichClient5.cCollection  ' Parameters collection (key-value pairs)
@@ -224,6 +225,9 @@ Private Function EnumParameterKey(ByVal p_ParameterKeyEnum As e_StandardParamete
    
    Case stdparam_HttpCookie
       EnumParameterKey = "HTTP_COOKIE"
+   
+   Case stdparam_HttpIfNoneMatch
+      EnumParameterKey = "HTTP_IF_NONE_MATCH"
    
    Case Else
       Debug.Assert False
