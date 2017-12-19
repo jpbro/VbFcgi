@@ -62,6 +62,7 @@ Private Sub IFcgiApp_ProcessRequest(po_Request As VbFcgiLib.CFcgiRequest, po_Res
    Dim lo_Header As vbRichClient5.cStringBuilder
    Dim lo_IBuilder As VbFcgiLib.IBuilder
    Dim lo_Html As VbFcgiLib.CBuilderHtml
+   Dim lo_File As VbFcgiLib.CBuilderFile
    Dim l_Title As String
    Dim l_SubTitle As String
    Dim l_SubTitleExample As String
@@ -69,7 +70,8 @@ Private Sub IFcgiApp_ProcessRequest(po_Request As VbFcgiLib.CFcgiRequest, po_Res
    Dim l_VisitCount As Long
    Dim l_HttpHost As String
    Dim l_TagIndex As Long
-   
+   Dim l_Filename As String
+      
    On Error GoTo ErrorHandler
 
    ' Make sure that FCGI parameters are complete built and the Upstream FCGI object has been set
@@ -84,107 +86,143 @@ Private Sub IFcgiApp_ProcessRequest(po_Request As VbFcgiLib.CFcgiRequest, po_Res
    
    l_HttpHost = po_Request.Fcgi.Params.ValueByEnum(stdparam_HttpHost)
    
-   ' Build the HTML portion of the HTTP response
-   
-   ' Initialize the HTML builder/helper
-   Set lo_Html = po_Response.Builders.Builder(builder_Html)
-   
-   With lo_Html
-      .AppendDocType htmldoctype_Html5
+   ' Check for file download request
+   If po_Request.Http.QueryParameters.Exists("download") Then
+      ' Requester wants to download a file
       
-      .OpenTags "html"
+      l_Filename = po_Request.Http.QueryParameters("download")
       
-      l_TagIndex = .OpenTags("head")
-            
-      ' *** START DEMONSTRATION OF QUERY PARAMETER HANDLING
-      If po_Request.Http.QueryParameters.Exists("title") Then
-         l_Title = lo_Html.EncodeEntities(po_Request.Http.QueryParameters("title"))
-      End If
-      ' *** END DEMONSTRATION OF QUERY PARAMETER HANDLING
-      If stringIsEmptyOrWhitespaceOnly(l_Title) Then
-         l_Title = "vbFcgi Demo App"
-         l_SubTitle = "Pass a ""title"" query to change the title of this page."
-         l_SubTitleExampleUrl = "http://" & l_HttpHost & po_Request.Fcgi.Params.ValueByEnum(stdparam_ScriptName) & "?title=Greetings from planet earth!"
+      If InStr(1, l_Filename, "\") > 0 Or InStr(1, l_Filename, "/") Then
+         Err.Raise 70, , "Permission denied for parent folders and sub-folders."
       End If
       
-      .AppendWithTag l_Title, "title"
+      Set lo_File = po_Response.Builders.Builder(builder_File)
+      Set lo_IBuilder = lo_File
       
-      .CloseOpenedTagsToIndex l_TagIndex  ' Close <head> tag
+      lo_File.OpenFile pathBin & "downloads\" & l_Filename, po_Request.Fcgi.Params.ValueByEnum(stdparam_HttpIfNoneMatch)
+       
+      lo_IBuilder.Finish
+       
+   Else
+      ' Build the HTML portion of the HTTP response
       
-      ' Build BODY
-      .OpenTags "body"
+      ' Initialize the HTML builder/helper
+      Set lo_Html = po_Response.Builders.Builder(builder_Html)
       
-      .AppendWithTag l_Title, "h1"
-   
-      If Not stringIsEmptyOrWhitespaceOnly(l_SubTitle) Then
-         .AppendWithTag l_SubTitle, "h2"
-                                    
-         l_TagIndex = .OpenTags("p")
-         .Append "Example: "
-         .OpenHyperlinkTag l_SubTitleExampleUrl
-         .Append .EncodeEntities(l_SubTitleExampleUrl)
-         .CloseOpenedTagsToIndex l_TagIndex ' Close up to H3 tag
-      End If
-   
-      l_TagIndex = .OpenTags("p", "b")
-      .Append "<a href='https://www.github.com/jpbro/VbFcgi'>Learn more about VbFcgi on GitHub.</a>"
-      .CloseOpenedTagsToIndex l_TagIndex  ' Close B and P tags
-   
-      ' *** START DEMONSTRATION OF COOKIES
-      l_TagIndex = .OpenTagWithAttributes("p", , , "color: orange; font-weight: bold;")
-      If po_Request.Http.Cookies.Exists("visits") Then
-         On Error Resume Next
-         l_VisitCount = po_Request.Http.Cookies.CookieByKey("visits").Value
-         On Error GoTo ErrorHandler
+      With lo_Html
+         .AppendDocType htmldoctype_Html5
          
-         If l_VisitCount = 0 Then
-            ' Bad cookie value!
-            .Append "Hey! Have you been mucking about with your cookies?"
-         Else
-            ' Display number of visits
-            .Append4 "You have previously visited this page ", l_VisitCount, " time", IIf(l_VisitCount <> 1, "s.", ".")
+         .OpenTags "html"
+         
+         l_TagIndex = .OpenTags("head")
+               
+         ' *** START DEMONSTRATION OF QUERY PARAMETER HANDLING
+         If po_Request.Http.QueryParameters.Exists("title") Then
+            l_Title = lo_Html.EncodeEntities(po_Request.Http.QueryParameters("title"))
          End If
-      Else
-         ' First visit
-         .Append "This is your first visit, pleased to meet you!"
-      End If
-      .CloseOpenedTagsToIndex l_TagIndex  ' Close P tag
+         ' *** END DEMONSTRATION OF QUERY PARAMETER HANDLING
+         If stringIsEmptyOrWhitespaceOnly(l_Title) Then
+            l_Title = "vbFcgi Demo App"
+            l_SubTitle = "Pass a ""title"" query to change the title of this page."
+            l_SubTitleExampleUrl = "http://" & l_HttpHost & po_Request.Fcgi.Params.ValueByEnum(stdparam_ScriptName) & "?title=Greetings from planet earth!"
+         End If
+         
+         .AppendWithTag l_Title, "title"
+         
+         .CloseOpenedTagsToIndex l_TagIndex  ' Close <head> tag
+         
+         ' Build BODY
+         .OpenTags "body"
+         
+         .AppendWithTag l_Title, "h1"
+      
+         If Not stringIsEmptyOrWhitespaceOnly(l_SubTitle) Then
+            .AppendWithTag l_SubTitle, "h2"
+                                       
+            l_TagIndex = .OpenTags("p")
+            .Append "Example: "
+            .OpenHyperlinkTag l_SubTitleExampleUrl
+            .Append .EncodeEntities(l_SubTitleExampleUrl)
+            .CloseOpenedTagsToIndex l_TagIndex ' Close up to H3 tag
+         End If
+      
+         l_TagIndex = .OpenTags("p", "b")
+         .Append "<a href='https://www.github.com/jpbro/VbFcgi'>Learn more about VbFcgi on GitHub.</a>"
+         .CloseOpenedTagsToIndex l_TagIndex  ' Close B and P tags
+      
+         ' *** START DEMONSTRATION OF COOKIES
+         l_TagIndex = .OpenTagWithAttributes("p", , , "color: orange; font-weight: bold;")
+         If po_Request.Http.Cookies.Exists("visits") Then
+            On Error Resume Next
+            l_VisitCount = po_Request.Http.Cookies.CookieByKey("visits").Value
+            On Error GoTo ErrorHandler
             
-      ' Increment "Visits" cookie
-      po_Request.Http.Cookies.AddOrReplaceCookie "visits", l_VisitCount + 1
-      ' *** END DEMONSTRATION OF COOKIES
+            If l_VisitCount = 0 Then
+               ' Bad cookie value!
+               .Append "Hey! Have you been mucking about with your cookies?"
+            Else
+               ' Display number of visits
+               .Append4 "You have previously visited this page ", l_VisitCount, " time", IIf(l_VisitCount <> 1, "s.", ".")
+            End If
+         Else
+            ' First visit
+            .Append "This is your first visit, pleased to meet you!"
+         End If
+         .CloseOpenedTagsToIndex l_TagIndex  ' Close P tag
+               
+         ' Increment "Visits" cookie
+         po_Request.Http.Cookies.AddOrReplaceCookie "visits", l_VisitCount + 1
+         ' *** END DEMONSTRATION OF COOKIES
+      
+         ' Add download links to test CBuilderFile class
+         Dim l_DownloadUrl As String
+         
+         l_DownloadUrl = "http://" & l_HttpHost & po_Request.Fcgi.Params.ValueByEnum(stdparam_ScriptName) & "?download="
+         
+         l_TagIndex = .OpenTags("p")
+         .OpenHyperlinkTag l_DownloadUrl & "test.pdf", "_blank"
+         .Append "Download a PDF"
+         .CloseOpenedTagsToIndex l_TagIndex ' Close P tag
+         
+         l_TagIndex = .OpenTags("p")
+         .OpenHyperlinkTag l_DownloadUrl & "test.png", "_blank"
+         .Append "Download a PNG"
+         .CloseOpenedTagsToIndex l_TagIndex ' Close P tag
+                  
+         ' End of download test
+         
+         .Append4 "<p>", "The current date & time on the server is: ", Now, "</p>"
+         .AppendWithTag "VbFcgi is " & ChrW$(&HAAA&) & ChrW$(&HE01&) & ChrW$(&H671&) & ChrW$(&H188&) & ChrW$(&H47B&) & ChrW$(&H257&) & ChrW$(&HFEC9&) & " capable via UTF-8!", "p"
+       
+         ' Build FCGI Parameters table
+         .AppendWithTag "FCGI Parameters received from Upstream Webserver:", "h2"
+         .OpenTags "table"
+         For ii = 1 To mo_FcgiParams.Count - 1
+            .OpenTags "tr"
+            .AppendWithTag mo_FcgiParams.KeyByIndex(ii), "td"
+            .AppendWithTag mo_FcgiParams.ValueByIndex(ii), "td"
+            .CloseLastOpenedTag  ' Close tr tag
+         Next ii
+         .CloseLastOpenedTag  ' Close table tag
+         
+         ' Build STDIN info
+         .AppendWithTag "FCGI STDIN Content Length: " & mo_FcgiStdin.ContentLength, "p"
+         
+         ' Build response time info
+         .AppendWithTag "Response Build Time: " & Format$(libRc5Factory.C.HPTimer - l_StartedBuildAt, "0.00000") & " seconds", "p"
+         
+         ' Close all open tags in reverse order
+         .CloseAllOpenedTags
+               
+         ' Add cookies to HTTP header
+         Set lo_IBuilder = lo_Html
+         lo_IBuilder.HttpHeader.Append po_Request.Http.Cookies.CookieHeaders
+         
+         ' Finish building HTML, encode as UTF-8 and write it back upstream
+         .Finish contentencoding_UTF8
+      End With
+   End If
    
-      .Append4 "<p>", "The current date & time on the server is: ", Now, "</p>"
-      .AppendWithTag "VbFcgi is " & ChrW$(&HAAA&) & ChrW$(&HE01&) & ChrW$(&H671&) & ChrW$(&H188&) & ChrW$(&H47B&) & ChrW$(&H257&) & ChrW$(&HFEC9&) & " capable via UTF-8!", "p"
-    
-      ' Build FCGI Parameters table
-      .AppendWithTag "FCGI Parameters received from Upstream Webserver:", "h2"
-      .OpenTags "table"
-      For ii = 1 To mo_FcgiParams.Count - 1
-         .OpenTags "tr"
-         .AppendWithTag mo_FcgiParams.KeyByIndex(ii), "td"
-         .AppendWithTag mo_FcgiParams.ValueByIndex(ii), "td"
-         .CloseLastOpenedTag  ' Close tr tag
-      Next ii
-      .CloseLastOpenedTag  ' Close table tag
-      
-      ' Build STDIN info
-      .AppendWithTag "FCGI STDIN Content Length: " & mo_FcgiStdin.ContentLength, "p"
-      
-      ' Build response time info
-      .AppendWithTag "Response Build Time: " & Format$(libRc5Factory.C.HPTimer - l_StartedBuildAt, "0.00000") & " seconds", "p"
-      
-      ' Close all open tags in reverse order
-      .CloseAllOpenedTags
-            
-      ' Add cookies to HTTP header
-      Set lo_IBuilder = lo_Html
-      lo_IBuilder.HttpHeader.Append po_Request.Http.Cookies.CookieHeaders
-      
-      ' Finish building HTML, encode as UTF-8 and write it back upstream
-      .Finish contentencoding_UTF8
-   End With
-      
    Exit Sub
 
 ErrorHandler:
