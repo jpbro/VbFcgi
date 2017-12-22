@@ -54,7 +54,18 @@ Option Explicit
 ' USAGE
 ' -------------------------------------------------------------------------------
 '
-' Create VBML files:
+' ---------------------------------------
+' Configuring your web server:
+' ---------------------------------------
+'
+' You will need to configure your web server to pass .vbml files upstream to
+' your FastCGI backend. Please consult your web server documentation for
+' instructions on how to do this, or have a look at the sample Nginx config in:
+' /bin/nginx/conf/nginx.conf
+'
+' ---------------------------------------
+' Creating VBML files:
+' ---------------------------------------
 '
 ' First, you will need to create .VBML files and store them on a drive that
 ' your FCGI application has access to. I recommend a \vbml\ folder
@@ -75,7 +86,9 @@ Option Explicit
 '
 ' So [[ My Tag]] is the same as [[MY     TAG]] and [[my tag]]
 '
-' Parse VBML files:
+' ---------------------------------------
+' Parsing VBML files:
+' ---------------------------------------
 '
 ' In your FCGI application's ProcessRequest method, you will be passed a
 ' CFcgiRepsonse object (po_FcgiResponse).
@@ -110,6 +123,18 @@ Option Explicit
 ' Note that the FoundTag event receives a VbFcgiLib.CWebStringTemplate object (see that class for more info).
 ' The default property is .Content so you can just assign a string to po_Replacement for simple replacements.
 ' However, for more complex replacements, you can access the HTML helper functions of the CWebStringTemplate class.
+'
+' ---------------------------------------
+' Navigating to VBML file in the browser:
+' ---------------------------------------
+'
+' The URL for your VBML files should include the path to your FCGI application followed by
+' the path to the VBML file.
+'
+' For example, if you have a VBML file in the /vbml/testing/myfile.vbml
+' And your FCGI application DLL is called myapp.gcgi
+' And the web server is listening locally at 127.0.0.01
+' Then the URL would be: http://127.0.0.1/myapp.fcgi/testing/myfile.vbml
 
 Implements VbFcgiLib.IBuilder
 
