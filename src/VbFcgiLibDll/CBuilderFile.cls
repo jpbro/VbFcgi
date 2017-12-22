@@ -35,6 +35,59 @@ Option Explicit
 ' OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 ' SOFTWARE.
 
+' -------------------------------------------------------------------------------
+' PURPOSE
+' -------------------------------------------------------------------------------
+'
+' This class helps you send files from your FCGI application file system
+' downstream to a remote web browser.
+'
+' It will do this by streaming sequential chunks of a file downstream to a
+' webserver.
+'
+' This class has support for ETags (strong only as of December 21, 2017),
+' so it will send an HTTP Status of 304 Not Modified to the downstream
+' web server if it detects that the downstream browser's cached file Etag
+' matches the local file Etag.
+' NOTE: As of December 21, 2017, Etag calculation is based on the file
+' path, size, and last modified date. This is not perfect, but until we have
+' streaming content hash functionality it will have to do. The good news
+' is that it should only result in false cache misses, not false cache hits.
+'
+' This class implements the VbFcgiLib.IBuilder interface (see the IBuilder
+' class for more details).
+'
+' -------------------------------------------------------------------------------
+' USAGE
+' -------------------------------------------------------------------------------
+'
+' In your FCGI application's ProcessRequest method, you will be passed a
+' CFcgiRepsonse object (po_FcgiResponse).
+'
+' If your FCGI application determines that it wants to send a file downstream to
+' the browser, it should set a local CBuilderFile variable to the return value
+' of a call to po_FcgiResponse.Builder(builder_File). e.g.:
+'
+'   Dim lo_File As VbFcgiLib.CBuilderFile
+'   Set lo_File = po_FcgiResponse.Builder(builder_File)
+'
+' You can then call the OpenFile method, passing a file path and an optional
+' Etag as it was received from the downstream client.
+'
+' OpenFile will then do one of the following things:
+'
+' A) If the file is not found, it will send an HTTP Status 404 NOT FOUND downstream.
+' B) If the file is found and the calculated Etag matches the passed Etag (if any)
+'    it will send an HTTP status 304 NOT MODIFIED downstream.
+' C) If the file is found and there is an Etag mismatch (or no Etag), then it will
+'    stream the file content downstream in sequential chunks.
+'
+' HTTP headers for Content-Type, Content-Length, and Etag will be automatically
+' generated unless overridden. See the CHttpHeader documentation for more information
+' about how to add/override HTTP headers of any IBuilder class.
+
+Implements VbFcgiLib.IBuilder
+
 Public Enum e_EtagType
    etag_Custom = -1 ' Set the ETag property
    etag_None   ' Don't generate an etag
@@ -51,8 +104,6 @@ Public Enum e_EtagType
    etag_Sha384Base64
    etag_Sha512Base64
 End Enum
-
-Implements VbFcgiLib.IBuilder
 
 Public Event Finished()
 
