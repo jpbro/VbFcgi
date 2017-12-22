@@ -35,6 +35,35 @@ Option Explicit
 ' OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 ' SOFTWARE.
 
+' -------------------------------------------------------------------------------
+' PURPOSE
+' -------------------------------------------------------------------------------
+'
+' This class defines the interface that all VbFcgi CBuilder* classes implement.
+' Classes that implement the IBuilder interface are designed to help you more
+' easily build web content (including HTTP headers) using VB6.
+'
+' As of December 21, 2017, the following VbFcgiLib classes implement the
+' IBuilder interface:
+'
+' CBuilderFile - helper class for sending locally stored files downstream.
+'                (for example, PDFs, images, etc...)
+'
+' CBuilderHtml - helper class for building HTML files completely in memory.
+'
+' CBuilderTemplate - helper class for reading template files (usually HTML)
+'                    from the local file system and detecting & replacing special
+'                    "tags" to generate dynamic page data for sending downstream.
+'
+' -------------------------------------------------------------------------------
+' USAGE
+' -------------------------------------------------------------------------------
+'
+' In general you will not implement your own IBuilder classes, so usage is
+' limited to interaction with the packaged classes that implement the
+' IBuilder interface. See each IBuilder implementing class for usage specific
+' to those classes.
+
 Public Property Get HttpHeader() As VbFcgiLib.CHttpHeader
    ' Returns a IHttpHeaderFields object
 End Property

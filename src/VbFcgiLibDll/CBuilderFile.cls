@@ -43,12 +43,13 @@ Option Explicit
 ' downstream to a remote web browser.
 '
 ' It will do this by streaming sequential chunks of a file downstream to a
-' webserver.
+' web server.
 '
-' This class has support for ETags (strong only as of December 21, 2017),
-' so it will send an HTTP Status of 304 Not Modified to the downstream
+' This class has support for ETags (strong only, as of December 21, 2017).
+' This means it will send an HTTP Status of 304 Not Modified to the downstream
 ' web server if it detects that the downstream browser's cached file Etag
 ' matches the local file Etag.
+'
 ' NOTE: As of December 21, 2017, Etag calculation is based on the file
 ' path, size, and last modified date. This is not perfect, but until we have
 ' streaming content hash functionality it will have to do. The good news
