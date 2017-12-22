@@ -35,6 +35,38 @@ Option Explicit
 ' OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 ' SOFTWARE.
 
+' -------------------------------------------------------------------------------
+' PURPOSE
+' -------------------------------------------------------------------------------
+'
+' To hand out an IBuilder class to your FCGI application. IBuilder classes are
+' designed to help you more easily create and transmit specific kinds of web content
+' (e.g. HTML documents, templates, and binary files).
+'
+' -------------------------------------------------------------------------------
+' USAGE
+' -------------------------------------------------------------------------------
+'
+' A CBuilders class will be passed to your FCGI application as part of the
+' CFcgiReponse class that is passed to the IFcgi_ProcessRequest method.
+'
+' Once you have determine what kind of information you want to send back
+' downstream to the browser, you can select a specific IBuilder implementing
+' class by calling the CBuilder.Builder() method.
+'
+' For example, if you want to send a completely dynamically generated HTML file
+' downstream, you would call
+'
+' po_Response.Builders.Builder(builder_Html) ' to get a CBuilderHtml class
+'
+' Or to send a binary file downstream, you would call:
+'
+' po_response.Builders.Builder(builder_File) ' to get a CBuilderFile class
+'
+' Please see each CBuilder* class for more information on the purpose
+' and usage of each.
+
+
 Public Enum e_ContentEncoding
    contentencoding_RecommendedDefault = -1
    contentencoding_Unknown
