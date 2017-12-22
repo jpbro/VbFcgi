@@ -8,10 +8,32 @@ BEGIN
 END
 Attribute VB_Name = "CBuilderFile"
 Attribute VB_GlobalNameSpace = False
-Attribute VB_Creatable = True
+Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = False
 Attribute VB_Exposed = True
 Option Explicit
+
+' Copyright (c) 2017 Jason Peter Brown <jason@bitspaces.com>
+'
+' MIT License
+'
+' Permission is hereby granted, free of charge, to any person obtaining a copy
+' of this software and associated documentation files (the "Software"), to deal
+' in the Software without restriction, including without limitation the rights
+' to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+' copies of the Software, and to permit persons to whom the Software is
+' furnished to do so, subject to the following conditions:
+'
+' The above copyright notice and this permission notice shall be included in all
+' copies or substantial portions of the Software.
+'
+' THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+' IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+' FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+' AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+' LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+' OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+' SOFTWARE.
 
 Public Enum e_EtagType
    etag_Custom = -1 ' Set the ETag property
@@ -283,44 +305,26 @@ Private Sub mo_HttpHeader_BeforeBuildHttpHeader()
       If m_NotModified Then
          ' Client cached file is fresh, send 304 NOT MODIFIED
          
-         With mo_HttpHeader.AddOrReplace("Status")
-            With .InitializeByKeyValuePairs()
-               .Add "", "304"
-            End With
-         End With
+         mo_HttpHeader.AddOrReplace "Status", 304
                   
-         With mo_HttpHeader.Add("Content-Length")
-            With .InitializeByKeyValuePairs()
-               .Add "", "0"
-            End With
-         End With
+         mo_HttpHeader.AddOrReplace "Content-Length", 0
          
       Else
          ' Build HTTP header for file data
          
          If Not mo_HttpHeader.Exists("Content-Type") Then
-            With mo_HttpHeader.Add("Content-Type")
-               With .InitializeByKeyValuePairs()
-                  .Add "", mimeTypeFromFilePath(m_FilePath)
-               End With
-            End With
+            mo_HttpHeader.Add "Content-Type", mimeTypeFromFilePath(m_FilePath)
          End If
       
          ' ETag
          If Not stringIsEmptyOrWhitespaceOnly(m_ETag) Then
-            With mo_HttpHeader.AddOrReplace("ETag")
-               With .InitializeByKeyValuePairs()
-                  .Add "", m_ETag
-               End With
-            End With
+            If Not mo_HttpHeader.Exists("Etag") Then
+               mo_HttpHeader.AddOrReplace "ETag", m_ETag
+            End If
          End If
          
          ' Set file size
-         With mo_HttpHeader.AddOrReplace("Content-Length")
-            With .InitializeByKeyValuePairs()
-               .Add "", m_FileLen
-            End With
-         End With
+         mo_HttpHeader.AddOrReplace "Content-Length", m_FileLen
       End If
    End If
 End Sub
