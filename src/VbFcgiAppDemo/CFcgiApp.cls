@@ -258,7 +258,7 @@ Private Sub mo_Vbml_FoundTag(ByVal p_Tag As String, po_Replacement As VbFcgiLib.
    Select Case UCase$(p_Tag)
    Case "TITLE"
       ' Generate a dynamic title
-      po_Replacement = "Welcome on " & Format$(Now, "MMMM D, YYYY at H:NN ampm")
+      po_Replacement = "It is " & Format$(Now, "MMMM D, YYYY at H:NN ampm")
    
    Case "TABLE_001"
       ' Generate a random table of data, and tell the VBML template parser not to encode HTML entities on the assumption we've done it ourselves
@@ -282,10 +282,9 @@ Private Sub mo_Vbml_FoundTag(ByVal p_Tag As String, po_Replacement As VbFcgiLib.
          
          .CloseAllOpenedTags
       End With
-     
       
    Case Else
-      ' Unknown tag
+      ' Unknown tag, replace with a warning.
       apiOutputDebugString "Encountered unknown tag: " & p_Tag
       
       po_Replacement.SkipEncodeEntities = True ' Turn off automatic entity encoding since we are building HTML
