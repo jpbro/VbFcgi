@@ -35,13 +35,45 @@ Option Explicit
 ' OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 ' SOFTWARE.
 
+' -------------------------------------------------------------------------------
+' PURPOSE
+' -------------------------------------------------------------------------------
+'
+' This class defines the interface that all upstream FCGI applications must
+' implement in order to be used by the VbFcgi framework.
+'
+' -------------------------------------------------------------------------------
+' USAGE
+' -------------------------------------------------------------------------------
+'
+' To create a class that can be used by the VbFcgi framework you must:
+'
+' 1) Create a new ActiveX Dll project.
+'
+' 2) Add a reference to VbFcgiLib to your project.
+'
+' 3) Rename the default "Class1" class to "CFcgiApp"
+'
+' 4) In the "General" code section for the "CFcgiApp" class, type:
+'
+'    Implements VbFcgiLib.IFcgiApp
+'
+' 5) Add the following code:
+'
+'    Private Sub IFcgiApp_ProcessRequest(po_Request As VbFcgiLib.CFcgiRequest, po_Response As VbFcgiLib.CFcgiResponse)
+'
+' 6) Code your web application within the IFcgiApp_ProcessRequest sub. See comments
+'    in the ProcessRequest sub (below) for more details.
+
 Public Sub ProcessRequest(po_Request As VbFcgiLib.CFcgiRequest, po_Response As VbFcgiLib.CFcgiResponse)
    ' This sub is called when an FCGI request is received by the CFgiServer class.
    
    ' The po_Request object holds information received from
    ' the browser (Http) and web server (Fcgi) that can be queried to build your dynamic web pages.
+   ' For more information, see the VbFcgiLib.CFcgiRequest class.
    
    ' The po_Response object should be used by your FCGI application
    ' to pass data downstream to the web server/browser.
+   ' For more information, see the VbFcgiLib.CFcgiResponse class.
 End Sub
 
