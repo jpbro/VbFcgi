@@ -35,6 +35,67 @@ Option Explicit
 ' OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 ' SOFTWARE.
 
+' -------------------------------------------------------------------------------
+' PURPOSE
+' -------------------------------------------------------------------------------
+'
+' This class helps you build complete HTML documents in memory using VB6 code
+' and send them downstream to a web browser.
+'
+' It is designed for speed and to help you avoid long and ugly string concatentions,
+' as well as help you to avoid errors like missing closing tags.
+'
+' This is achieved through function specific for adding tags, and even
+' functions for specific tag types (for example <img> tags).
+'
+' -------------------------------------------------------------------------------
+' USAGE
+' -------------------------------------------------------------------------------
+'
+' In your FCGI application's ProcessRequest method, you will be passed a
+' CFcgiRepsonse object (po_FcgiResponse).
+'
+' If your FCGI application determines that it wants to fully generate a dynamic HTML
+' document and send it to the browser, it should set a local CBuilderHtml variable
+' to the return value of a call to po_FcgiResponse.Builder(builder_Html). e.g.:
+'
+'   Dim lo_Html As VbFcgiLib.CBuilderHtml
+'   Set lo_Html= po_FcgiResponse.Builder(builder_Html)
+'
+' You can then call methods of the CBuilderHtml object to generate a completely
+' dynamic HTML page. NOTE: If you want to work with static templates with
+' dynamic elements, you should use the CBuilderTemplate class instead. See the
+' CBuilderTemplate class for more details.
+'
+' Example:
+'
+'   Dim lo_Html As VbFcgiLib.CBuilderHtml
+'   Dim l_TagIndex As Long
+'
+'   Set lo_Html= po_FcgiResponse.Builder(builder_Html)
+'
+'   With lo_Html
+'      .AppendDocType htmldoctype_Html5
+'      .OpenTags "html"
+'      l_TagIndex = .OpenTags("head")
+'      .AppendWithTag "This the page title.", "title"
+'      .CloseOpenedTagsToIndex l_TagIndex ' Close all the way up the passed tag index - In this case <head>
+'
+'      .OpenTags "body"
+'      .AppendWithTag "Welcome to my page.", "h1"
+'      .AppendWithTag "This is my page and it is very special to me.", "p"
+'      .CloseAllOpenedTags ' Close every open tag in reverse order, all the way up to <html>
+'
+'      .Finish contentencoding_Utf8 ' Close the buffer and encode to the passed encoding.
+'                                   ' This will signal the FCGI app server that we are done and want to
+'                                   ' send the data downstream.
+'   End With
+'
+' The above code will return the following when you call the Content property:
+'
+' <!DOCTYPE html>
+' <html><head><title>This the page title.</title></head><body><h1>Welcome to my page.</h1><p>This is my page and it is very special to me.</p></body></html>
+
 Implements VbFcgiLib.IBuilder
 
 Public Event Finished()
@@ -230,15 +291,15 @@ Private Sub IBuilder_Finish(Optional ByVal p_ContentEncoding As VbFcgiLib.e_Cont
       
    If m_Finished Then Err.Raise 5, , "Already finished."
       
-   If p_ContentEncoding = contentencoding_RecommendedDefault Then p_ContentEncoding = contentencoding_UTF8
+   If p_ContentEncoding = contentencoding_RecommendedDefault Then p_ContentEncoding = contentencoding_Utf8
       
    Select Case p_ContentEncoding
-   Case contentencoding_UTF8
+   Case contentencoding_Utf8
       Me.CloseAllOpenedTags
       
       ma_Content = mo_WebString.ToUtf8
    
-   Case contentencoding_UTF16_LE
+   Case contentencoding_Utf16_LE
       Me.CloseAllOpenedTags
       
       ma_Content = mo_WebString.ToString
@@ -317,10 +378,10 @@ Private Sub mo_HttpHeader_BeforeBuildHttpHeader()
       With mo_HttpHeader.Add("Content-Type", "text/html")
          With .KeyValuePairs()
             Select Case Me.ContentEncoding
-            Case contentencoding_UTF8
+            Case contentencoding_Utf8
                l_Charset = "utf-8"
                
-            Case contentencoding_UTF16_LE
+            Case contentencoding_Utf16_LE
                l_Charset = "utf-16le"
                
             Case contentencoding_USASCII
