@@ -96,7 +96,7 @@ Private Sub IFcgiApp_ProcessRequest(po_Request As VbFcgiLib.CFcgiRequest, po_Res
    Case "vbml"
       ' Request is for a parsed VBML file
       Set mo_Vbml = po_Response.Builders.Builder(builder_Template)
-      mo_Vbml.ParseFile po_Request.Fcgi.Params.ValueByEnum(stdparam_DocumentRoot) & po_Request.Fcgi.Params.ValueByEnum(stdparam_PathInfo)
+      mo_Vbml.ParseFile pathBin & "vbml" & po_Request.Fcgi.Params.ValueByEnum(stdparam_PathInfo)
       mo_Vbml.Finish contentencoding_UTF8
       
    Case Else
