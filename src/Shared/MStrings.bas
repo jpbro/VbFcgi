@@ -24,9 +24,15 @@ Option Explicit
 ' SOFTWARE.
 
 Public Enum e_StringTrimWhitespace
+   stringtrimwhitespace_None = 0
    stringtrimwhitespace_Left = 1
    stringtrimwhitespace_Right = 2
+   stringtrimwhitespace_Both = 3
 End Enum
+
+Public Function stringMidByEndIndex(ByVal p_String As String, ByVal p_StartIndex As Long, ByVal p_EndIndex As Long) As String
+   stringMidByEndIndex = Mid$(p_String, p_StartIndex, p_EndIndex - p_StartIndex)
+End Function
 
 Public Function stringRemoveWhitespace(ByVal pText As String) As String
    Dim i As Long
@@ -84,65 +90,119 @@ Public Function stringRemoveWhitespace(ByVal pText As String) As String
    stringRemoveWhitespace = pText
 End Function
 
-Public Function stringIsEmptyOrWhitespaceOnly(p_Text As String) As Boolean
-   Dim i As Long
-   Dim l As Long
+Public Function stringFlattenWhitespace(ByVal p_Text As String, Optional ByVal p_Trim As e_StringTrimWhitespace = stringtrimwhitespace_Both) As String
+   ' Flatten sequential runs of 2 or more "whitespace" characters into a single space character.
+   ' Optionally trimming all spaces from left and/or right ends of the string
+   
+   If InStr(1, p_Text, vbTab) > 0 Then
+      p_Text = Replace$(p_Text, vbTab, " ")
+   End If
 
-   l = Len(p_Text)
-   If l <> 0 Then
-      For i = 1 To l
-         Select Case Asc(Mid$(p_Text, i, 1))
+   If InStr(1, p_Text, vbCr) > 0 Then
+      p_Text = Replace$(p_Text, vbCr, " ")
+   End If
+
+   If InStr(1, p_Text, vbLf) > 0 Then
+      p_Text = Replace$(p_Text, vbLf, " ")
+   End If
+
+   If InStr(1, p_Text, vbFormFeed) Then
+      p_Text = Replace$(p_Text, vbFormFeed, " ")
+   End If
+
+   If InStr(1, p_Text, vbVerticalTab) Then
+      p_Text = Replace$(p_Text, vbVerticalTab, " ")
+   End If
+
+   If InStr(1, p_Text, Chr$(160)) Then
+      p_Text = Replace$(p_Text, Chr$(160), " ")
+   End If
+
+   If InStr(1, p_Text, vbNullChar) Then
+      p_Text = Replace$(p_Text, vbNullChar, " ")
+   End If
+
+   If p_Trim = True Then p_Trim = stringtrimwhitespace_Both
+
+   If p_Trim <> stringtrimwhitespace_None Then
+      If p_Trim = stringtrimwhitespace_Both Then
+         p_Text = Trim$(p_Text)
+      ElseIf p_Trim = stringtrimwhitespace_Left Then
+         p_Text = LTrim$(p_Text)
+      ElseIf p_Trim = stringtrimwhitespace_Right Then
+         p_Text = RTrim$(p_Text)
+      End If
+   End If
+
+   Do While InStr(1, p_Text, "  ") > 0
+      ' Flatten 2 spaces into a single space
+      ' We loop to catch all longer runs of spaces
+      p_Text = Replace$(p_Text, "  ", " ")
+   Loop
+
+   ' Return the result
+   stringFlattenWhitespace = p_Text
+End Function
+
+Public Function stringIsEmptyOrWhitespaceOnly(p_Text As String) As Boolean
+   Dim ii As Long
+   Dim ll As Long
+
+   ll = Len(p_Text)
+   If ll <> 0 Then
+      For ii = 1 To ll
+         Select Case Asc(Mid$(p_Text, ii, 1))
          Case 9, 10, 11, 12, 13, 32, 160
          Case Else
             Exit Function
          End Select
-      Next i
+      Next ii
    End If
 
    stringIsEmptyOrWhitespaceOnly = True
 End Function
 
 Public Function stringTrimWhitespace(ByVal pText As String, Optional ByVal p_TrimFrom As e_StringTrimWhitespace = stringtrimwhitespace_Left Or stringtrimwhitespace_Right) As String
-   Dim i As Long
-   Dim l As Long
-   Dim j As Long
+   Dim ii As Long
+   Dim jj As Long
+   Dim ll As Long
 
-   l = Len(pText)
+   ll = Len(pText)
 
-   If l > 0 Then
+   If ll > 0 Then
       If p_TrimFrom And stringtrimwhitespace_Left Then
-         For i = 1 To l
-            Select Case AscW(Mid$(pText, i, 1))
+         For ii = 1 To ll
+            Select Case AscW(Mid$(pText, ii, 1))
             Case 9, 10, 11, 12, 13, 32, 160
             Case Else
                Exit For
             End Select
-         Next i
+         Next ii
       End If
       
-      If i < l Then
+      If ii < ll Then
          If p_TrimFrom And stringtrimwhitespace_Right Then
-            For j = l To 1 Step -1
-               Select Case AscW(Mid$(pText, j, 1))
+            For jj = ll To 1 Step -1
+               Select Case AscW(Mid$(pText, jj, 1))
                Case 9, 10, 11, 12, 13, 32, 160
                Case Else
                   Exit For
                End Select
-            Next j
+            Next jj
          End If
       End If
    
-      If j >= 1 Then
-         If (i <> 1) Or (j <> l) Then
-            If i = 0 Then i = 1
+      If jj >= 1 Then
+         If (ii <> 1) Or (jj <> ll) Then
+            If ii = 0 Then ii = 1
             
-            stringTrimWhitespace = Mid$(pText, i, j - i + 1)
+            stringTrimWhitespace = Mid$(pText, ii, jj - ii + 1)
          Else
             stringTrimWhitespace = pText
          End If
       
-      ElseIf i > 1 Then
-         stringTrimWhitespace = Mid$(pText, i)
+      ElseIf ii > 1 Then
+         stringTrimWhitespace = Mid$(pText, ii)
       
       Else
          stringTrimWhitespace = pText
