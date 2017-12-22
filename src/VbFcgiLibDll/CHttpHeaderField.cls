@@ -107,3 +107,10 @@ Public Function InitializeByKeyValuePairs(Optional po_PairsCollectionOrNothing A
    m_Initialized = True
 End Function
 
+Public Function KeyValuePairs() As VbFcgiLib.CHttpHeaderFieldKeyValuePairs
+   If m_Initialized Then
+      Set KeyValuePairs = mo_Pairs
+   Else
+      Set KeyValuePairs = Me.InitializeByKeyValuePairs()
+   End If
+End Function
