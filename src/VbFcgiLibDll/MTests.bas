@@ -48,7 +48,7 @@ Public Sub TestHtml()
    x.OpenHyperlinkTag "http://www.statslog.com"
    x.CloseAllOpenedTags ' Optional, calling Finished will also take care of this.
    
-   x.Finish contentencoding_Utf16_LE
+   x.Finish contentencoding_UTF16_LE
    
    Debug.Print stringIso88591ToVb(x.IBuilderInterface.HttpHeader.Content(True))
    Debug.Print y.Builder.Content
