@@ -48,11 +48,10 @@ Public Sub TestHtml()
    x.OpenHyperlinkTag "http://www.statslog.com"
    x.CloseAllOpenedTags ' Optional, calling Finished will also take care of this.
    
-   x.Finish contentencoding_USASCII
+   x.Finish contentencoding_UTF16_LE
    
-   Debug.Print y.Builder.Length
-   
-   Debug.Print stringIso88591ToVb(x.BuilderInterface.HttpHeader.Content(True))
+   Debug.Print stringIso88591ToVb(x.IBuilderInterface.HttpHeader.Content(True))
+   Debug.Print y.Builder.Content
 End Sub
 
 Public Sub TestCollection()
@@ -65,3 +64,9 @@ Public Sub TestCollection()
    Debug.Print x.KeyByIndex(0) = ""
 End Sub
    
+Public Sub TestTemplate()
+   Dim xx As New CTests
+   
+   xx.TestTemplateInfiniteLoopProtection
+End Sub
+
