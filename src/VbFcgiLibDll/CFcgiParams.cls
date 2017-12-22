@@ -35,8 +35,20 @@ Option Explicit
 ' OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 ' SOFTWARE.
 
-' This class holds a collection of CGI parameters (and related methods)
-' that were received from web server
+' -------------------------------------------------------------------------------
+' PURPOSE
+' -------------------------------------------------------------------------------
+'
+' This class allows access to a collection of FCGI parameters as key-value pairs
+' as received from a downstream web server.
+'
+' -------------------------------------------------------------------------------
+' USAGE
+' -------------------------------------------------------------------------------
+'
+' You can query this class to get information that was sent upstream by a web server
+' For things like the request method (GET, PUT, etc...), the query string,
+' HTTP request header fields, etc...
 
 Public Enum e_FcgiParametersState
    paramstate_Initialized  ' Nothing has happened yet
@@ -44,7 +56,7 @@ Public Enum e_FcgiParametersState
    paramstate_Built  ' The parameters collection is complete
 End Enum
 
-Public Enum e_StandardParameters ' Enum of standard CGI parameters for easier retrieval
+Public Enum e_StandardParameters ' Enum of standard/common FCGI parameters for easier retrieval
    stdparam_PathInfo
    stdparam_PathTranslated
    stdparam_QueryString

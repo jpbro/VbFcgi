@@ -35,6 +35,25 @@ Option Explicit
 ' OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 ' SOFTWARE.
 
+' -------------------------------------------------------------------------------
+' PURPOSE
+' -------------------------------------------------------------------------------
+'
+' This class holds references to CFcgi and CHttp classes (which themselves
+' hold information received from the downstream browser and web server.
+'
+' A CFcgiRequest class is passed as a parameter to your FCGI application when
+' IFcgiApp_ProcessRequest is called.
+'
+' -------------------------------------------------------------------------------
+' USAGE
+' -------------------------------------------------------------------------------
+'
+' This class is useful for getting information that was sent upstream by a
+' the web browser and web server.
+' For things like the request method (GET, PUT, etc...), the query parameters,
+' HTTP request header fields, cookies, etc...
+
 Private mo_Http As VbFcgiLib.CHttp
 Private mo_Fcgi As VbFcgiLib.CFcgi
 Private mo_Upstream As VbFcgiLib.CFcgiUpstream

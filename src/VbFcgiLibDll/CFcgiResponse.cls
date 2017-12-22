@@ -35,6 +35,25 @@ Option Explicit
 ' OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 ' SOFTWARE.
 
+' -------------------------------------------------------------------------------
+' PURPOSE
+' -------------------------------------------------------------------------------
+'
+' This class helps you respond to requests.
+'
+' A CFcgiResponse class instance is passed as a parameter to your FCGI
+' application when IFcgiApp_ProcessRequest is called there.
+'
+' -------------------------------------------------------------------------------
+' USAGE
+' -------------------------------------------------------------------------------
+'
+' You can use the Builders method to get a builder helper suitable for the type
+' of data that you want to respond with.
+'
+' Alternately, you can write directly downstream using the included WriteBytes,
+' Error, and Finished methods.
+
 Public Event SendBytes(ByVal p_RequestId As Long, pa_Bytes() As Byte)
 Public Event SendError(ByVal p_RequestId As Long, ByVal p_ErrorNumber As Long, ByVal p_ErrorDescription As String)
 Public Event SendFinished(ByVal p_RequestId As Long)
@@ -94,11 +113,15 @@ Private Sub mo_Builders_Finished()
 
    Set lo_Builder = mo_Builders.Builder
    With lo_Builder
+      ' Send HTTP header content for all builder types
       apiOutputDebugString "Sending HTTP header."
       
       Me.WriteBytes .HttpHeader.Content
       
+      ' Customize sending of content based on active builder type
       If TypeOf lo_Builder Is VbFcgiLib.CBuilderFile Then
+         ' CBuilderFile is active, so stream bytes downstream
+         
          apiOutputDebugString "Sending file builder content."
          
          Set lo_File = lo_Builder
@@ -115,6 +138,8 @@ Private Sub mo_Builders_Finished()
          Loop
          
       Else
+         ' Send entire content for any other builder type
+         
          apiOutputDebugString "Sending builder content."
          
          If .Length > 0 Then
