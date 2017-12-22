@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+	<head>
+		<title>[[TITLE]]</title>
+		<style>
+			td 
+			{ 
+				padding: 10px;
+				border: 1px solid #d0d0d0;
+			}
+			.right 
+			{ 
+				text-align: right; 
+			}
+		</style>
+		
+	</head>
+
+	<body>
+		<h1>This is a table of random numbers generated dynamically in a VB6 FCGI application:</h1>
+		
+		[[TABLE_001]]
+		
+		
+		<p>[[SAMPLE UNKNOWN TAG]]</p>
+	</body>
+</html>
