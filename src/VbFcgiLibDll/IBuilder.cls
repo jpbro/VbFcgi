@@ -39,7 +39,7 @@ Option Explicit
 ' PURPOSE
 ' -------------------------------------------------------------------------------
 '
-' This class defines the interface that all VbFcgi CBuilder[A-Z]* classes implement.
+' This class defines the interface that all VbFcgi CBuilder* classes implement.
 ' Classes that implement the IBuilder interface are designed to help you more
 ' easily build web content (including HTTP headers) using VB6.
 '
