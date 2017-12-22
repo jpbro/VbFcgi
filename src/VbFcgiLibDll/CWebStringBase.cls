@@ -341,12 +341,26 @@ Private Sub CloseTag(ByVal p_Tag As String)
 End Sub
 
 Private Sub OpenTag(ByVal p_Tag As String, ByVal p_PushToStack As Boolean)
+   Dim l_AppendLt As Boolean
+   Dim l_AppendGt As Boolean
+   
    If p_PushToStack Then mo_Tags.Push p_Tag
+   
+   p_Tag = stringRemoveWhitespace(p_Tag)
+   
+   If Left$(p_Tag, 1) <> "<" Then l_AppendLt = True
+   If Right$(p_Tag, 1) <> ">" Then l_AppendGt = True
 
    With mo_StringBuilder
-      .Append "<"
+      If l_AppendLt Then
+         .Append "<"
+      End If
+      
       .Append p_Tag
-      .Append ">"
+      
+      If l_AppendGt Then
+         .Append ">"
+      End If
    End With
 End Sub
 
