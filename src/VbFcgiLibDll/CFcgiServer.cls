@@ -411,6 +411,12 @@ Private Sub mo_TcpServer_DataArrival(ByVal hSocket As Long, ByVal BytesTotal As 
                            Else
                               l_Value = ""
                            End If
+                           
+                           Select Case UCase$(l_Param)
+                           Case "PATH_INFO", "PATH_TRANSLATED", "DOCUMENT_ROOT"
+                              ' Convert Unix path separator chars to Windows path separator chars
+                              l_Value = Replace$(l_Value, "/", "\")
+                           End Select
    
                            lo_Upstream.Params.ValueByKey(l_Param) = l_Value
    
