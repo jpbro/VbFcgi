@@ -55,17 +55,30 @@ Public Sub Remove(ByVal p_HeaderName As String)
    mo_Headers.Remove p_HeaderName
 End Sub
 
-Public Function AddOrReplace(ByVal p_HeaderName As String) As VbFcgiLib.CHttpHeaderField
+Public Function AddOrReplace(ByVal p_HeaderName As String, Optional ByVal p_PrimaryValue As String = "") As VbFcgiLib.CHttpHeaderField
    If Me.Exists(p_HeaderName) Then Me.Remove p_HeaderName
    
-   Set AddOrReplace = Me.Add(p_HeaderName)
+   Set AddOrReplace = Me.Add(p_HeaderName, p_PrimaryValue)
 End Function
 
-Public Function Add(ByVal p_HeaderName As String) As VbFcgiLib.CHttpHeaderField
+Public Function Add(ByVal p_HeaderName As String, Optional ByVal p_PrimaryValue As String) As VbFcgiLib.CHttpHeaderField
+   ' All HTTP headers fields accept a primary value (for example: Content-Type: text/html")
+   ' Pass the primary value via the p_PrimaryValue parameter.
+   ' Some HTTP header fields accept multiple subsequent ";" separated values
+   ' Those should be added via the InitializeByKeyValuePairs method
+   
+   If InStr(1, p_PrimaryValue, ";") > 0 Then Err.Raise 5, , "Only pass the primary value to this method and use InitializeByKeyValuePairs to add additional key/value pairs to the field."
+   
    Set Add = New VbFcgiLib.CHttpHeaderField
    Add.HttpHeaderFieldName = p_HeaderName
    
    mo_Headers.Add Add, p_HeaderName
+
+   If Not stringIsEmptyOrWhitespaceOnly(p_PrimaryValue) Then
+      With Add.InitializeByKeyValuePairs()
+         .Add "", p_PrimaryValue
+      End With
+   End If
 End Function
 
 Public Sub Append(ByVal p_HttpHeaderFields As String)
