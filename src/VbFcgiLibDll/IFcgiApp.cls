@@ -36,12 +36,12 @@ Option Explicit
 ' SOFTWARE.
 
 Public Sub ProcessRequest(po_Request As VbFcgiLib.CFcgiRequest, po_Response As VbFcgiLib.CFcgiResponse)
-   ' This sub is called when an FCG request is received by the CFgiServer class.
+   ' This sub is called when an FCGI request is received by the CFgiServer class.
    
    ' The po_Request object holds information received from
    ' the browser (Http) and web server (Fcgi) that can be queried to build your dynamic web pages.
    
    ' The po_Response object should be used by your FCGI application
-   ' to pass data upstream to the web server/browser.
+   ' to pass data downstream to the web server/browser.
 End Sub
 
