@@ -70,3 +70,15 @@ Public Sub TestTemplate()
    xx.TestTemplateInfiniteLoopProtection
 End Sub
 
+Sub TestJson()
+   Dim lo_Json As VbFcgiLib.CBuilderJson
+   
+   Set lo_Json = New CBuilderJson
+   
+   lo_Json.Initialize Nothing ' Initialize to empty collection
+   ' Add some key & value pairs
+   lo_Json.IJsonObject.AddJsonObjectByKeyValuePairs "status", 200, "message", "OK"
+   lo_Json.Finish contentencoding_RecommendedDefault
+
+   Debug.Print stringUtf8ToVb(lo_Json.Content)
+End Sub
