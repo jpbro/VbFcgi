@@ -291,15 +291,15 @@ Private Sub IBuilder_Finish(Optional ByVal p_ContentEncoding As VbFcgiLib.e_Cont
       
    If m_Finished Then Err.Raise 5, , "Already finished."
       
-   If p_ContentEncoding = contentencoding_RecommendedDefault Then p_ContentEncoding = contentencoding_Utf8
+   If p_ContentEncoding = contentencoding_RecommendedDefault Then p_ContentEncoding = contentencoding_UTF8
       
    Select Case p_ContentEncoding
-   Case contentencoding_Utf8
+   Case contentencoding_UTF8
       Me.CloseAllOpenedTags
       
       ma_Content = mo_WebString.ToUtf8
    
-   Case contentencoding_Utf16_LE
+   Case contentencoding_UTF16_LE
       Me.CloseAllOpenedTags
       
       ma_Content = mo_WebString.ToString
@@ -351,7 +351,7 @@ Private Sub IBuilder_Reset()
    Set mo_WebString = New VbFcgiLib.CWebStringBase
 End Sub
 
-Public Sub Finish(ByVal p_ContentEncoding As VbFcgiLib.e_ContentEncoding)
+Public Sub Finish(Optional ByVal p_ContentEncoding As VbFcgiLib.e_ContentEncoding = contentencoding_RecommendedDefault)
    IBuilder_Finish p_ContentEncoding
 End Sub
 
@@ -378,10 +378,10 @@ Private Sub mo_HttpHeader_BeforeBuildHttpHeader()
       With mo_HttpHeader.Add("Content-Type", "text/html")
          With .KeyValuePairs()
             Select Case Me.ContentEncoding
-            Case contentencoding_Utf8
+            Case contentencoding_UTF8
                l_Charset = "utf-8"
                
-            Case contentencoding_Utf16_LE
+            Case contentencoding_UTF16_LE
                l_Charset = "utf-16le"
                
             Case contentencoding_USASCII

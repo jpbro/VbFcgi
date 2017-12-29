@@ -450,7 +450,7 @@ Private Sub IBuilder_Reset()
    Set mo_HttpHeader = New VbFcgiLib.CHttpHeader
 End Sub
 
-Public Sub Finish(ByVal p_ContentEncoding As VbFcgiLib.e_ContentEncoding)
+Public Sub Finish(Optional ByVal p_ContentEncoding As VbFcgiLib.e_ContentEncoding = contentencoding_RecommendedDefault)
    IBuilder_Finish p_ContentEncoding
 End Sub
 

@@ -94,8 +94,13 @@ Private Sub IJson_AddJsonObjectByKeyValuePairs(ParamArray pa_KeyAndValuePairs() 
    
    If mo_Collection Is Nothing Then
       Set mo_Collection = libRc5Factory.C.JSONDecodeToCollection(lo_Collection.SerializeToJSONString)
+      m_Initialized = True
    Else
-      mo_Collection.Add lo_Collection
+      If mo_Collection.Count = 0 Then
+         Set mo_Collection = libRc5Factory.C.JSONDecodeToCollection(lo_Collection.SerializeToJSONString)
+      Else
+         mo_Collection.Add lo_Collection
+      End If
    End If
 End Sub
 
@@ -117,8 +122,13 @@ Private Sub IJson_AddJsonArrayByValues(ParamArray pa_Values() As Variant)
    
    If mo_Collection Is Nothing Then
       Set mo_Collection = libRc5Factory.C.JSONDecodeToCollection(lo_Collection.SerializeToJSONString)
+      m_Initialized = True
    Else
-      mo_Collection.Add lo_Collection
+      If mo_Collection.Count = 0 Then
+         Set mo_Collection = libRc5Factory.C.JSONDecodeToCollection(lo_Collection.SerializeToJSONString)
+      Else
+         mo_Collection.Add lo_Collection
+      End If
    End If
 End Sub
 
@@ -237,7 +247,7 @@ Private Sub IBuilder_Reset()
    Set mo_Collection = Nothing
 End Sub
 
-Public Sub Finish(ByVal p_ContentEncoding As VbFcgiLib.e_ContentEncoding)
+Public Sub Finish(Optional ByVal p_ContentEncoding As VbFcgiLib.e_ContentEncoding = contentencoding_RecommendedDefault)
    IBuilder_Finish p_ContentEncoding
 End Sub
 
