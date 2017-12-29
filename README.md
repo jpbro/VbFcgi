@@ -1,5 +1,5 @@
 # VbFcgi
-Get your VB6 apps on the web with this FCGI Host/Server Framework for Visual Basic 6 (VB6) ActiveX/COM DLL FCGI Applications!
+Create new web apps using your VB6 coding knowledge, or get your existing VB6 client/server apps on the web with this FCGI Host/Server Framework for Visual Basic 6 (VB6) ActiveX/COM DLL FCGI Applications!
 
 # Introduction
 VbFcgi is a framework that allows you to easily get VB6 code onto the web. It was developed against Nginx, but should work with any web server that implements the FCGI spec.
@@ -19,7 +19,7 @@ Lastly, I've also bundled Olaf Schmidt's excellent vbRichClient5 library (http:/
 # Demo Usage
 1. If you don't already have a web server running, start nginx from the command-line by going to the .\VbFcgi\bin\nginx folder and then rnning the nginx.exe command. If you already have a web server running, make sure it is configured to pass *.fcgi requests from the browser upstream to 127.0.0.1 port 9100.
 2. From the command line, start VbFcgiHost.exe with the following command: vbfcgihost.exe /host 127.0.0.1 /port 9100 /spawn 1
-3. Open your browser and go to http://127.0.0.1/test.fcgi - you should see the HTML response from the demo FCGI application.
+3. Open your browser and go to http://127.0.0.1/vbfcgiapp.fcgi - you should see the HTML response from the demo FCGI application.
 
 # Creating your own FCGI Application
 You can use the included VbFcgiApp source code as a starting point - all the work is done in the IFcgiApp_ProcessRequest method, so give it a thorough review.
@@ -37,7 +37,7 @@ In order to write your own FCGI application from scratch, you must:
 9. Make a copy of the built DLL and change the extension to .fcgi.
 10. Move the .fcgi file to the same folder as the VbFcgiHost.exe and VbFcgiLib.dll files.
 
-NOTE: You do **not** need to register your FCGI application when distributing it as registration-free instantiation is used by this framework.
+**NOTE:** You do **not** need to register your FCGI application DLL, nor VbFcgiLib.dll when distributing it as registration-free instantiation is used by this framework.
 
 When you subsequently run the VbFcgiHost.exe, it will use your .fcgi as a "plugin" (of sorts) for responding to correspondng FCGI requests. For example, typing http://localhost/myapp.fcgi will cause VbFcgiHost to create an instance of the CFcgiApp class from the myapp.fcgi DLL stored in the same folder, and then it will call IFcgiApp_ProcessRequest in that class.
 
