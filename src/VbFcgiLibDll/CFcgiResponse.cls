@@ -79,7 +79,7 @@ Public Sub WriteBytes(pa_Bytes() As Byte)
       
    If m_Finished Then Err.Raise 5, , "FCGI application finished."
    
-   apiOutputDebugString "Sending " & arraySize(pa_Bytes) & " bytes upstream."
+   apiOutputDebugString "Sending " & arraySize(pa_Bytes) & " bytes downstream."
    
    RaiseEvent SendBytes(m_RequestId, pa_Bytes)
 End Sub

@@ -132,28 +132,28 @@ End Function
 
 Private Sub mo_ActiveDownstream_SendError(ByVal p_RequestId As Long, ByVal p_ErrorNumber As Long, ByVal p_ErrorDescription As String)
    Dim l_RequestKey As String
-   Dim lo_Upstream As CFcgiUpstream
+   Dim lo_Downstream As CFcgiDownstream
    
    ' There was an error building the response
    apiOutputDebugString "Error building response for ID #" & p_RequestId & ". Error Code " & p_ErrorNumber & ", Description: " & p_ErrorDescription
    
    l_RequestKey = RequestKey(p_RequestId)
    If mo_ActiveRequests.Exists(l_RequestKey) Then
-      Set lo_Upstream = mo_ActiveRequests.Item(l_RequestKey)
+      Set lo_Downstream = mo_ActiveRequests.Item(l_RequestKey)
    End If
    
-   If lo_Upstream Is Nothing Then
+   If lo_Downstream Is Nothing Then
       apiOutputDebugString "Request object not found for ID#" & p_RequestId
    Else
-      lo_Upstream.SetError p_ErrorNumber, p_ErrorDescription
+      lo_Downstream.SetError p_ErrorNumber, p_ErrorDescription
       
-      SendStdErrByRequestNoErr lo_Upstream
+      SendStdErrByRequestNoErr lo_Downstream
    End If
 End Sub
 
 Private Sub mo_ActiveDownstream_SendFinished(ByVal p_RequestId As Long)
    Dim l_RequestKey As String
-   Dim lo_Upstream As CFcgiUpstream
+   Dim lo_Downstream As CFcgiDownstream
    
    On Error GoTo ErrorHandler
    
@@ -161,25 +161,25 @@ Private Sub mo_ActiveDownstream_SendFinished(ByVal p_RequestId As Long)
    
    l_RequestKey = RequestKey(p_RequestId)
    If mo_ActiveRequests.Exists(l_RequestKey) Then
-      Set lo_Upstream = mo_ActiveRequests.Item(l_RequestKey)
+      Set lo_Downstream = mo_ActiveRequests.Item(l_RequestKey)
    End If
    
-   If lo_Upstream Is Nothing Then
+   If lo_Downstream Is Nothing Then
       apiOutputDebugString "Request object not found for ID#" & p_RequestId
    Else
-      lo_Upstream.StdOut.State = fcgistdoutstate_Built
-      lo_Upstream.State = fcgireqstate_Ready
+      lo_Downstream.StdOut.State = fcgistdoutstate_Built
+      lo_Downstream.State = fcgireqstate_Ready
    
-      If fcgiFlushStdOut(mo_TcpServer, lo_Upstream.SocketNumber, lo_Upstream.Id, lo_Upstream.StdOut, True) Then
+      If fcgiFlushStdOut(mo_TcpServer, lo_Downstream.SocketNumber, lo_Downstream.Id, lo_Downstream.StdOut, True) Then
          ' Flushed - send FCGI_END_REQUEST
-         fcgiSendEndRequest mo_TcpServer, lo_Upstream.SocketNumber, lo_Upstream.Id, 0, 0
+         fcgiSendEndRequest mo_TcpServer, lo_Downstream.SocketNumber, lo_Downstream.Id, 0, 0
       Else
-         apiOutputDebugString "STDOUT could not be flushed in finished event for Request #" & lo_Upstream.Id
+         apiOutputDebugString "STDOUT could not be flushed in finished event for Request #" & lo_Downstream.Id
          
-         lo_Upstream.State = fcgireqstate_Error
+         lo_Downstream.State = fcgireqstate_Error
       End If
       
-      RemoveRequestNoErr lo_Upstream
+      RemoveRequestNoErr lo_Downstream
    End If
    
    Exit Sub
@@ -191,7 +191,7 @@ End Sub
 Private Sub mo_ActiveDownstream_SendBytes(ByVal p_RequestId As Long, pa_Bytes() As Byte)
    ' Append the content to STDOUT
    Dim l_RequestKey As String
-   Dim lo_Upstream As VbFcgiLib.CFcgiUpstream
+   Dim lo_Downstream As VbFcgiLib.CFcgiDownstream
    
    On Error GoTo ErrorHandler
    
@@ -199,20 +199,20 @@ Private Sub mo_ActiveDownstream_SendBytes(ByVal p_RequestId As Long, pa_Bytes() 
    
    l_RequestKey = RequestKey(p_RequestId)
    If mo_ActiveRequests.Exists(l_RequestKey) Then
-      Set lo_Upstream = mo_ActiveRequests.Item(l_RequestKey)
+      Set lo_Downstream = mo_ActiveRequests.Item(l_RequestKey)
    End If
    
-   If lo_Upstream Is Nothing Then
+   If lo_Downstream Is Nothing Then
       apiOutputDebugString "Request object not found for ID#" & p_RequestId
    Else
-      lo_Upstream.StdOut.AppendContent pa_Bytes
+      lo_Downstream.StdOut.AppendContent pa_Bytes
    
-      If Not fcgiFlushStdOut(mo_TcpServer, lo_Upstream.SocketNumber, lo_Upstream.Id, lo_Upstream.StdOut, False) Then
-         apiOutputDebugString "STDOUT could not be flushed in WriteBytes event for Request #" & lo_Upstream.Id
+      If Not fcgiFlushStdOut(mo_TcpServer, lo_Downstream.SocketNumber, lo_Downstream.Id, lo_Downstream.StdOut, False) Then
+         apiOutputDebugString "STDOUT could not be flushed in WriteBytes event for Request #" & lo_Downstream.Id
          
-         lo_Upstream.State = fcgireqstate_Error
+         lo_Downstream.State = fcgireqstate_Error
       
-         RemoveRequestNoErr lo_Upstream
+         RemoveRequestNoErr lo_Downstream
       End If
    End If
    
@@ -229,7 +229,7 @@ Private Sub mo_TcpServer_DataArrival(ByVal hSocket As Long, ByVal BytesTotal As 
    Dim lt_EndRequestBody As FCGX_END_REQUEST_BODY
    Dim l_RequestKey As String
    Dim l_RecordPos As Long
-   Dim lo_Upstream As VbFcgiLib.CFcgiUpstream
+   Dim lo_Downstream As VbFcgiLib.CFcgiDownstream
    Dim l_Param As String
    Dim l_Value As String
    Dim la_Param() As Byte
@@ -267,7 +267,7 @@ Private Sub mo_TcpServer_DataArrival(ByVal hSocket As Long, ByVal BytesTotal As 
 
    ' Process FCGI records
    Do While l_RecordPos < BytesTotal
-      Set lo_Upstream = Nothing
+      Set lo_Downstream = Nothing
 
       ' Process FCGI record version
       lt_Record.Version = la_Payload(l_RecordPos)
@@ -303,9 +303,9 @@ Private Sub mo_TcpServer_DataArrival(ByVal hSocket As Long, ByVal BytesTotal As 
          End If
 
          ' Create request object and add it to active requests collection
-         Set lo_Upstream = New VbFcgiLib.CFcgiUpstream  ' GetFreeRequest
-         lo_Upstream.Initialize lt_Record.RequestId, hSocket
-         mo_ActiveRequests.Add lo_Upstream, l_RequestKey
+         Set lo_Downstream = New VbFcgiLib.CFcgiDownstream  ' GetFreeRequest
+         lo_Downstream.Initialize lt_Record.RequestId, hSocket
+         mo_ActiveRequests.Add lo_Downstream, l_RequestKey
          
          If Not mo_ResponseTimer.Enabled Then
             mo_ResponseTimer.Enabled = True
@@ -322,7 +322,7 @@ Private Sub mo_TcpServer_DataArrival(ByVal hSocket As Long, ByVal BytesTotal As 
             
          Case Else
             ' Unsupported Role
-            lo_Upstream.SetError fcgierr_UnsupportedRole, "The passed role (" & lt_BeginRequestBody.Role & ") is not supported."
+            lo_Downstream.SetError fcgierr_UnsupportedRole, "The passed role (" & lt_BeginRequestBody.Role & ") is not supported."
          
          End Select
 
@@ -331,9 +331,9 @@ Private Sub mo_TcpServer_DataArrival(ByVal hSocket As Long, ByVal BytesTotal As 
          
          If mo_ActiveRequests.Exists(l_RequestKey) Then
             ' Found active request - get our state object
-            Set lo_Upstream = mo_ActiveRequests.Item(l_RequestKey)
+            Set lo_Downstream = mo_ActiveRequests.Item(l_RequestKey)
 
-            If lo_Upstream.State <> fcgireqstate_Error Then
+            If lo_Downstream.State <> fcgireqstate_Error Then
                ' Request not in error state.
                Select Case lt_Record.RecordType
                Case FCGI_PARAMS
@@ -346,13 +346,13 @@ Private Sub mo_TcpServer_DataArrival(ByVal hSocket As Long, ByVal BytesTotal As 
                      ' End of FCGI_PARAMS records, mark parameters object as finished
                      apiOutputDebugString "All FCGI Params content decoded. RecordPos: " & l_RecordPos & ", Bytes Total: " & BytesTotal
                      
-                     lo_Upstream.Params.State = paramstate_Built
+                     lo_Downstream.Params.State = paramstate_Built
       
                   Else
                      ' Keys and Value pair length variables will be either 1 or 4 bytes long
                      ' If the first byte and &H80 <> 0 then it will be 4 bytes, otherwise 1 byte
                      ' Get Parameter Length
-                     lo_Upstream.Params.State = paramstate_Building
+                     lo_Downstream.Params.State = paramstate_Building
    
                      Do While l_RecordPos + l_Offset < lt_Record.ContentLength
                         apiOutputDebugString "Records pos: " & l_RecordPos + l_Offset + 8 & ", Content Len: " & lt_Record.ContentLength
@@ -418,7 +418,7 @@ Private Sub mo_TcpServer_DataArrival(ByVal hSocket As Long, ByVal BytesTotal As 
                               l_Value = Replace$(l_Value, "/", "\")
                            End Select
    
-                           lo_Upstream.Params.ValueByKey(l_Param) = l_Value
+                           lo_Downstream.Params.ValueByKey(l_Param) = l_Value
    
                            apiOutputDebugString "Found Key/Value Pair: " & l_Param & " / " & l_Value
                            
@@ -437,7 +437,7 @@ Private Sub mo_TcpServer_DataArrival(ByVal hSocket As Long, ByVal BytesTotal As 
                      ' STDIN terminator record
                      apiOutputDebugString "STDIN terminator record found - closing STDIN stream."
                      
-                     lo_Upstream.Stdin.State = fcgistdinstate_Built
+                     lo_Downstream.Stdin.State = fcgistdinstate_Built
                      
                   Else
                      apiOutputDebugString "STDIN record found, appending content."
@@ -445,7 +445,7 @@ Private Sub mo_TcpServer_DataArrival(ByVal hSocket As Long, ByVal BytesTotal As 
                      ReDim la_Content(lt_Record.ContentLength - 1)
                      apiCopyMemory la_Content(0), la_Payload(l_RecordPos + 8), lt_Record.ContentLength
                      
-                     lo_Upstream.Stdin.AppendContent la_Content
+                     lo_Downstream.Stdin.AppendContent la_Content
                      Erase la_Content
                   End If
                
@@ -489,10 +489,10 @@ ErrorHandler:
    
    apiOutputDebugString "Error in DataArrival: " & Err.Number & " " & Err.Description
    
-   If lo_Upstream Is Nothing Then
+   If lo_Downstream Is Nothing Then
       SendStdErrByInfoNoErr hSocket, lt_Record.RequestId, Err.Number, Err.Description
    Else
-      SendStdErrByRequestNoErr lo_Upstream
+      SendStdErrByRequestNoErr lo_Downstream
    End If
    
    Resume Cleanup
@@ -504,7 +504,7 @@ Private Sub mo_ResponseTimer_Timer()
          
          Static s_Busy As Boolean   ' Prevent re-entry
 
-         Dim lo_Upstream As VbFcgiLib.CFcgiUpstream   ' Active request object
+         Dim lo_Downstream As VbFcgiLib.CFcgiDownstream   ' Active request object
          Dim lo_FcgiRequest As VbFcgiLib.CFcgiRequest
          Dim lo_FcgiApp As VbFcgiLib.IFcgiApp
          Dim l_AppKey As String
@@ -536,54 +536,54 @@ Private Sub mo_ResponseTimer_Timer()
 80       l_StartedLoopAt = libRc5Factory.C.HPTimer
          
 90       Do
-100         For Each lo_Upstream In mo_ActiveRequests
-110            If lo_Upstream.State = fcgireqstate_Error Then
+100         For Each lo_Downstream In mo_ActiveRequests
+110            If lo_Downstream.State = fcgireqstate_Error Then
                   ' Error occurred, send STDERR
-120               SendStdErrByRequestNoErr lo_Upstream
+120               SendStdErrByRequestNoErr lo_Downstream
 130               l_ProcessedRequest = True
                   
 140            Else
                   ' No error, check for ready-state of request
-150               If lo_Upstream.State <> fcgireqstate_Busy Then
-160                  Select Case lo_Upstream.StdOut.State
+150               If lo_Downstream.State <> fcgireqstate_Busy Then
+160                  Select Case lo_Downstream.StdOut.State
                      Case fcgistdoutstate_Built, fcgistdoutstate_Building
                         ' STDOUT build has been finished, SO:
                         ' Flush the remaining buffer, send the end request,
                         ' and remove the object from the active collection
-170                     apiOutputDebugString "Sending STDOUT for request #" & lo_Upstream.Id
+170                     apiOutputDebugString "Sending STDOUT for request #" & lo_Downstream.Id
                
-180                     If fcgiFlushStdOut(mo_TcpServer, lo_Upstream.SocketNumber, lo_Upstream.Id, lo_Upstream.StdOut, (lo_Upstream.StdOut.State = fcgistdoutstate_Built)) Then
+180                     If fcgiFlushStdOut(mo_TcpServer, lo_Downstream.SocketNumber, lo_Downstream.Id, lo_Downstream.StdOut, (lo_Downstream.StdOut.State = fcgistdoutstate_Built)) Then
                            ' Flushed - send FCGI_END_REQUEST
-190                        If lo_Upstream.StdOut.State = fcgistdoutstate_Built Then
-200                           If Not lo_Upstream.StdOut.HasUnflushedContent Then
-210                              fcgiSendEndRequest mo_TcpServer, lo_Upstream.SocketNumber, lo_Upstream.Id, 0, 0
+190                        If lo_Downstream.StdOut.State = fcgistdoutstate_Built Then
+200                           If Not lo_Downstream.StdOut.HasUnflushedContent Then
+210                              fcgiSendEndRequest mo_TcpServer, lo_Downstream.SocketNumber, lo_Downstream.Id, 0, 0
 220                           End If
 230                        End If
 240                     End If
                         
 250                     l_ProcessedRequest = True
                         
-260                     If lo_Upstream.StdOut.State = fcgistdoutstate_Built Then
-270                        If Not lo_Upstream.StdOut.HasUnflushedContent Then
-280                           RemoveRequestNoErr lo_Upstream
+260                     If lo_Downstream.StdOut.State = fcgistdoutstate_Built Then
+270                        If Not lo_Downstream.StdOut.HasUnflushedContent Then
+280                           RemoveRequestNoErr lo_Downstream
 290                        End If
 300                     End If
                         
 310                  Case Else
                         ' STDOUT is not finished being built yet
-320                     Select Case lo_Upstream.State
+320                     Select Case lo_Downstream.State
                         Case fcgireqstate_Initialized, fcgireqstate_Ready
-330                        If lo_Upstream.Params.State = paramstate_Built Then
+330                        If lo_Downstream.Params.State = paramstate_Built Then
                               ' Parameters have all been received, check for STDIN completion
 340                           On Error Resume Next
                               ' Trap error if no ContentLength sent
 350                           l_ContentLengthCgi = 0
-360                           l_ContentLengthCgi = lo_Upstream.Params.ValueByEnum(stdparam_ContentLength)
+360                           l_ContentLengthCgi = lo_Downstream.Params.ValueByEnum(stdparam_ContentLength)
 370                           On Error GoTo ErrorHandler
                               
 380                           If l_ContentLengthCgi > 0 Then
-390                              If lo_Upstream.Stdin.State = fcgistdinstate_Built Then
-400                                 l_ContentLengthStdin = lo_Upstream.Stdin.ContentLength
+390                              If lo_Downstream.Stdin.State = fcgistdinstate_Built Then
+400                                 l_ContentLengthStdin = lo_Downstream.Stdin.ContentLength
 410                                 On Error GoTo ErrorHandler
                                     
 420                                 If l_ContentLengthStdin <> l_ContentLengthCgi Then
@@ -595,11 +595,11 @@ Private Sub mo_ResponseTimer_Timer()
 470                              End If
 480                           End If
                               
-490                           apiOutputDebugString "Building response for request ID #" & lo_Upstream.Id & ". Total requests in queue: " & mo_ActiveRequests.Count
+490                           apiOutputDebugString "Building response for request ID #" & lo_Downstream.Id & ". Total requests in queue: " & mo_ActiveRequests.Count
                               
-500                           lo_Upstream.State = fcgireqstate_Busy
+500                           lo_Downstream.State = fcgireqstate_Busy
                                                       
-510                           l_ScriptName = lo_Upstream.Params.ValueByEnum(stdparam_ScriptName)
+510                           l_ScriptName = lo_Downstream.Params.ValueByEnum(stdparam_ScriptName)
                               
 520                           Select Case Left$(l_ScriptName, 1)
                               Case "\", "/"
@@ -628,9 +628,9 @@ Private Sub mo_ResponseTimer_Timer()
 690                           End If
                               
 700                           Set lo_FcgiRequest = New VbFcgiLib.CFcgiRequest
-710                           Set lo_FcgiRequest.FcgiUpstream = lo_Upstream
+710                           Set lo_FcgiRequest.FcgiDownstream = lo_Downstream
                               
-720                           Set mo_ActiveDownstream = lo_Upstream.FcgiResponse
+720                           Set mo_ActiveDownstream = lo_Downstream.FcgiResponse
                               
 730                           lo_FcgiApp.ProcessRequest lo_FcgiRequest, mo_ActiveDownstream
 740                        End If
@@ -653,7 +653,7 @@ Private Sub mo_ResponseTimer_Timer()
                
 840            apiOutputDebugString "In response loop."
                
-850         Next lo_Upstream
+850         Next lo_Downstream
             
             ' Keep looping if we have any active requests and we have exceed our response loop threshold
 860      Loop While l_ProcessedRequest And (l_LoopTime < mo_ResponseTimer.Interval * 2) And (mo_ActiveRequests.Count > 0)
@@ -672,26 +672,26 @@ Cleanup:
             
 910         If l_ErrNumber = fcgierr_NotReadyForResponse Then
                ' Conditions were not met for the response to be built, try again later
-920            If lo_Upstream Is Nothing Then
+920            If lo_Downstream Is Nothing Then
                   ' Sanity check - shouldn't get here.
 930               apiOutputDebugString "Sanity Check in mo_ResponseTimer_Timer. Request Object = Nothing after handling fcgierr_ResponseBuilderNotReady."
                   
 940               Debug.Assert False
 950            Else
                   ' Return the request to the Ready state
-960               lo_Upstream.State = fcgireqstate_Ready
+960               lo_Downstream.State = fcgireqstate_Ready
 970            End If
                
 980         Else
 990            apiOutputDebugString "Error in response timer event, line #" & l_Erl & ": " & l_ErrNumber & " " & l_ErrDesc
             
-1000           If Not lo_Upstream Is Nothing Then
-1010              lo_Upstream.SetError l_ErrNumber, l_ErrDesc
+1000           If Not lo_Downstream Is Nothing Then
+1010              lo_Downstream.SetError l_ErrNumber, l_ErrDesc
                   
-1020              SendStdErrByRequestNoErr lo_Upstream
+1020              SendStdErrByRequestNoErr lo_Downstream
 1030           End If
 
-1040           RemoveRequestNoErr lo_Upstream
+1040           RemoveRequestNoErr lo_Downstream
 1050        End If
 1060     End If
 
@@ -735,7 +735,7 @@ Private Sub SendStdErrByInfoNoErr(ByVal p_SocketNumber As Long, ByVal p_RequestI
    End If
 End Sub
 
-Private Sub SendStdErrByRequestNoErr(po_Request As CFcgiUpstream)
+Private Sub SendStdErrByRequestNoErr(po_Request As CFcgiDownstream)
    On Error Resume Next
    
    If po_Request Is Nothing Then Debug.Assert False: Exit Sub
@@ -747,7 +747,7 @@ Private Sub SendStdErrByRequestNoErr(po_Request As CFcgiUpstream)
    RemoveRequestNoErr po_Request
 End Sub
 
-Private Sub RemoveRequestNoErr(po_Request As CFcgiUpstream)
+Private Sub RemoveRequestNoErr(po_Request As CFcgiDownstream)
    ' Remove a request from the active queue if it exists, without raising any errors
    ' Making it safe for use in an error handler
    

@@ -37,10 +37,10 @@ Option Explicit
 
 Private mo_Cookies As VbFcgiLib.CHttpCookies
 Private mo_QueryParams As VbFcgiLib.CHttpQueryParams
-Private mo_Upstream As VbFcgiLib.CFcgiUpstream
+Private mo_Downstream As VbFcgiLib.CFcgiDownstream
 
-Friend Property Set FcgiUpstream(po_Upstream As VbFcgiLib.CFcgiUpstream)
-   Set mo_Upstream = po_Upstream
+Friend Property Set FcgiDownstream(po_Downstream As VbFcgiLib.CFcgiDownstream)
+   Set mo_Downstream = po_Downstream
 End Property
 
 Public Property Get Cookies(Optional pv_CookieDomain As Variant) As VbFcgiLib.CHttpCookies
@@ -53,7 +53,7 @@ Public Property Get Cookies(Optional pv_CookieDomain As Variant) As VbFcgiLib.CH
    Dim l_Domain As String
    Dim l_New As Boolean
    
-   If mo_Upstream Is Nothing Then Err.Raise vbObjectError, , "FCGI upstream object must be set to access cookies."
+   If mo_Downstream Is Nothing Then Err.Raise vbObjectError, , "FCGI upstream object must be set to access cookies."
    
    If mo_Cookies Is Nothing Then
       ' Initialize on first call
@@ -77,7 +77,7 @@ Public Property Get Cookies(Optional pv_CookieDomain As Variant) As VbFcgiLib.CH
       ' Build cookies collection for newly created object or changed domain
       s_LastDomain = l_Domain
       
-      mo_Cookies.ParseCookies mo_Upstream.Params, s_LastDomain
+      mo_Cookies.ParseCookies mo_Downstream.Params, s_LastDomain
    End If
    
    Set Cookies = mo_Cookies
@@ -87,8 +87,8 @@ Public Property Get QueryParameters() As VbFcgiLib.CHttpQueryParams
    If mo_QueryParams Is Nothing Then
       ' Initialize on first call
       Set mo_QueryParams = New VbFcgiLib.CHttpQueryParams
-      If Not mo_Upstream Is Nothing Then
-         mo_QueryParams.ParseQueryParams mo_Upstream.Params, mo_Upstream.Stdin
+      If Not mo_Downstream Is Nothing Then
+         mo_QueryParams.ParseQueryParams mo_Downstream.Params, mo_Downstream.Stdin
       End If
    End If
    

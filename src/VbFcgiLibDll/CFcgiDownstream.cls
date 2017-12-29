@@ -6,7 +6,7 @@ BEGIN
   DataSourceBehavior  = 0  'vbNone
   MTSTransactionMode  = 0  'NotAnMTSObject
 END
-Attribute VB_Name = "CFcgiUpstream"
+Attribute VB_Name = "CFcgiDownstream"
 Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = False
@@ -122,8 +122,8 @@ Public Property Get Params() As CFcgiParams
    Set Params = mo_Params
 End Property
 
-Public Property Get StdIn() As CFcgiStdIn
-   Set StdIn = mo_StdIn
+Public Property Get Stdin() As CFcgiStdIn
+   Set Stdin = mo_StdIn
 End Property
 
 Public Property Get StdOut() As CFcgiStdOut

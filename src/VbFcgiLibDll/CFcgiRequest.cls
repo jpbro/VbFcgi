@@ -56,12 +56,12 @@ Option Explicit
 
 Private mo_Http As VbFcgiLib.CHttp
 Private mo_Fcgi As VbFcgiLib.CFcgi
-Private mo_Upstream As VbFcgiLib.CFcgiUpstream
+Private mo_Downstream As VbFcgiLib.CFcgiDownstream
 
-Friend Property Set FcgiUpstream(po_Upstream As VbFcgiLib.CFcgiUpstream)
-   Set mo_Upstream = po_Upstream
-   Set mo_Http.FcgiUpstream = po_Upstream
-   Set mo_Fcgi.FcgiUpstream = po_Upstream
+Friend Property Set FcgiDownstream(po_Downstream As VbFcgiLib.CFcgiDownstream)
+   Set mo_Downstream = po_Downstream
+   Set mo_Http.FcgiDownstream = po_Downstream
+   Set mo_Fcgi.FcgiDownstream = po_Downstream
 End Property
 
 Public Property Get Fcgi() As VbFcgiLib.CFcgi

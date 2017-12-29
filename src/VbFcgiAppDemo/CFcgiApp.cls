@@ -40,10 +40,10 @@ Implements VbFcgiLib.IFcgiApp
 ' Every VbFcgiApp.dll must inclde a CFcgiApp class as a minimum.
 ' The CFcgiApp class must include the "Implements VbFcgiLib.IFcgiApp" directive in the General section.
 ' The CFcgiApp class must include all members of the IFcgiApp interface. They are:
-'        IFcgiApp_BuildResponse and IFcgiApp_UpstreamObject
-' After instatiation, your CFcgiApp class will be passed a VbFcgiLib.CFcgiUpstream object to IFcgiApp_UpstreamObject
-'     The Upstream object should be stored and its methods should be called for sending responses and raising errors.
-'     The Upstream object class methods are:
+'        IFcgiApp_BuildResponse and IFcgiApp_DownstreamObject
+' After instatiation, your CFcgiApp class will be passed a VbFcgiLib.CFcgiDownstream object to IFcgiApp_DownstreamObject
+'     The Downstream object should be stored and its methods should be called for sending responses and raising errors.
+'     The Downstream object class methods are:
 '        WriteBytes, Error, and Finished
 
 ' This is a very small sample class for building responses to FCGI requests.
@@ -66,6 +66,7 @@ Private Sub IFcgiApp_ProcessRequest(po_Request As VbFcgiLib.CFcgiRequest, po_Res
    Dim lo_IBuilder As VbFcgiLib.IBuilder
    Dim lo_Html As VbFcgiLib.CBuilderHtml
    Dim lo_File As VbFcgiLib.CBuilderFile
+   Dim lo_Json As VbFcgiLib.CBuilderJson
    Dim l_Title As String
    Dim l_SubTitle As String
    Dim l_SubTitleExample As String
@@ -75,10 +76,10 @@ Private Sub IFcgiApp_ProcessRequest(po_Request As VbFcgiLib.CFcgiRequest, po_Res
    Dim l_TagIndex As Long
    Dim l_Filename As String
    Dim l_Path As String
-      
+   
    On Error GoTo ErrorHandler
 
-   ' Make sure that FCGI parameters are complete built and the Upstream FCGI object has been set
+   ' Make sure that FCGI parameters are complete built and the Downstream FCGI object has been set
    ' otherwise raise fcgierr_NotReadyForResponse
    ' Just a sanity check - this should never happen
    If po_Request.Fcgi.Params.State <> paramstate_Built Then Err.Raise fcgierr_NotReadyForResponse, , "FCGI Parameters incomplete."
@@ -117,6 +118,15 @@ Private Sub IFcgiApp_ProcessRequest(po_Request As VbFcgiLib.CFcgiRequest, po_Res
           
          lo_IBuilder.Finish
           
+      ' Check for JSON request
+      ElseIf po_Request.Http.QueryParameters.Exists("getjson") Then
+         Set lo_Json = po_Response.Builders.Builder(builder_Json)
+         
+         lo_Json.Initialize Nothing ' Initialize to empty collection
+         ' Add some key & value pairs
+         lo_Json.IJsonObject.AddJsonObjectByKeyValuePairs "status", 200, "message", "OK"
+         lo_Json.Finish contentencoding_RecommendedDefault
+         
       Else
          ' Build the HTML portion of the HTTP response
          
@@ -209,7 +219,7 @@ Private Sub IFcgiApp_ProcessRequest(po_Request As VbFcgiLib.CFcgiRequest, po_Res
             .AppendWithTag "VbFcgi is " & ChrW$(&HAAA&) & ChrW$(&HE01&) & ChrW$(&H671&) & ChrW$(&H188&) & ChrW$(&H47B&) & ChrW$(&H257&) & ChrW$(&HFEC9&) & " capable via UTF-8!", "p"
           
             ' Build FCGI Parameters table
-            .AppendWithTag "FCGI Parameters received from Upstream Webserver:", "h2"
+            .AppendWithTag "FCGI Parameters received from downstream Webserver:", "h2"
             .OpenTags "table"
             For ii = 1 To mo_FcgiParams.Count - 1
                .OpenTags "tr"
@@ -232,7 +242,7 @@ Private Sub IFcgiApp_ProcessRequest(po_Request As VbFcgiLib.CFcgiRequest, po_Res
             Set lo_IBuilder = lo_Html
             lo_IBuilder.HttpHeader.Append po_Request.Http.Cookies.CookieHeaders
             
-            ' Finish building HTML, encode as UTF-8 and write it back upstream
+            ' Finish building HTML, encode as UTF-8 and write it back downstream
             .Finish contentencoding_UTF8
          End With
       End If
@@ -247,7 +257,7 @@ ErrorHandler:
    l_ErrNum = Err.Number
    l_ErrDesc = Err.Description
    
-   ' Send error information upstream event
+   ' Send error information downstream
    po_Response.Error l_ErrNum, l_ErrDesc
 End Sub
 

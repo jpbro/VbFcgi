@@ -35,16 +35,16 @@ Option Explicit
 ' OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 ' SOFTWARE.
 
-Private mo_FcgiUpstream As VbFcgiLib.CFcgiUpstream
+Private mo_FcgiDownstream As VbFcgiLib.CFcgiDownstream
 
-Friend Property Set FcgiUpstream(po_FcgiUpstream As VbFcgiLib.CFcgiUpstream)
-   Set mo_FcgiUpstream = po_FcgiUpstream
+Friend Property Set FcgiDownstream(po_FcgiDownstream As VbFcgiLib.CFcgiDownstream)
+   Set mo_FcgiDownstream = po_FcgiDownstream
 End Property
 
 Public Property Get Stdin() As VbFcgiLib.CFcgiStdIn
-   Set Stdin = mo_FcgiUpstream.Stdin
+   Set Stdin = mo_FcgiDownstream.Stdin
 End Property
 
 Public Property Get Params() As VbFcgiLib.CFcgiParams
-   Set Params = mo_FcgiUpstream.Params
+   Set Params = mo_FcgiDownstream.Params
 End Property
