@@ -179,7 +179,14 @@ Private Property Get IBuilder_Content() As Byte()
    
    If Not m_Finished Then Err.Raise 5, , "You must call the Finished method before requesting content."
    
-   IBuilder_Content = ma_Content
+   If arraySize(ma_Content) > 0 Then
+      ' Return JSON data as UTF8 byte array
+      IBuilder_Content = ma_Content
+   Else
+      ' No JSON data available - return empty JSON object notation
+      Debug.Assert False
+      IBuilder_Content = stringVbToUtf8("{}")
+   End If
 End Property
 
 Private Property Get IBuilder_HttpHeader() As VbFcgiLib.CHttpHeader
