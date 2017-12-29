@@ -83,9 +83,9 @@ Public Enum e_BuilderType
    builder_Html = 1 ' HTML string builder/helper
    builder_File      ' Byte data stored on the file system (typically)
    builder_Template   ' Server-side VBML template parser/helper
+   builder_Json  ' JSON string builder/helper
    
    ' Not supported yet:
-   'builder_Json  ' JSON string builder/helper
    'builder_Xml   ' XML string builder/helper
    'builder_Raw   ' Raw socket to write whatever you want to
 End Enum
@@ -114,6 +114,9 @@ Public Function Builder(Optional ByVal p_InitializeBuilderType As VbFcgiLib.e_Bu
          
       Case builder_Template
          Set mo_Builder = New VbFcgiLib.CBuilderTemplate
+         
+      Case builder_Json
+         Set mo_Builder = New VbFcgiLib.CBuilderJson
          
       Case Else
          Err.Raise 5, , "Unknown builder type: " & p_InitializeBuilderType
