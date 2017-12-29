@@ -145,6 +145,7 @@ Private Sub IFcgiApp_ProcessRequest(po_Request As VbFcgiLib.CFcgiRequest, po_Res
                l_Title = lo_Html.EncodeHtmlEntities(po_Request.Http.QueryParameters("title"))
             End If
             ' *** END DEMONSTRATION OF QUERY PARAMETER HANDLING
+            
             If stringIsEmptyOrWhitespaceOnly(l_Title) Then
                l_Title = "vbFcgi Demo App"
                l_SubTitle = "Pass a ""title"" query to change the title of this page."
@@ -167,13 +168,27 @@ Private Sub IFcgiApp_ProcessRequest(po_Request As VbFcgiLib.CFcgiRequest, po_Res
                .Append "Example: "
                .OpenHyperlinkTag l_SubTitleExampleUrl
                .Append .EncodeHtmlEntities(l_SubTitleExampleUrl)
-               .CloseOpenedTagsToIndex l_TagIndex ' Close up to H3 tag
+               .CloseOpenedTagsToIndex l_TagIndex ' Close up to p tag
             End If
-         
+                  
+            l_TagIndex = .OpenTags("p")
+            .OpenHyperlinkTag "http://" & l_HttpHost & po_Request.Fcgi.Params.ValueByEnum(stdparam_ScriptName) & "/template_demo.vbml"
+            .Append "Click to visit a dynamically altered template page."
+            .CloseOpenedTagsToIndex l_TagIndex ' Close up to the p tag
+                     
+            l_TagIndex = .OpenTags("p")
+            .OpenHyperlinkTag "http://" & l_HttpHost & po_Request.Fcgi.Params.ValueByEnum(stdparam_ScriptName) & "?getjson=getjson"
+            .Append "Click to get JSON data."
+            .CloseOpenedTagsToIndex l_TagIndex ' Close up to the p tag
+                     
+            .Append "<hr>"
+            
             l_TagIndex = .OpenTags("p", "b")
             .Append "<a href='https://www.github.com/jpbro/VbFcgi'>Learn more about VbFcgi on GitHub.</a>"
             .CloseOpenedTagsToIndex l_TagIndex  ' Close B and P tags
-         
+                     
+            .Append "<hr>"
+                     
             ' *** START DEMONSTRATION OF COOKIES
             l_TagIndex = .OpenTagWithAttributes("p", , , "color: orange; font-weight: bold;")
             If po_Request.Http.Cookies.Exists("visits") Then

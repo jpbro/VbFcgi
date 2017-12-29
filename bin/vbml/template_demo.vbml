@@ -18,6 +18,8 @@
 	<body>
 		<h1>This is a table of random numbers generated dynamically in a VB6 FCGI application:</h1>
 		
+		<p><button onclick='window.location.reload();'>Click to refresh</button></p>
+		
 		[[TABLE_001]]
 		
 		
