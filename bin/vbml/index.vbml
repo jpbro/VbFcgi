@@ -34,11 +34,13 @@
 			.masthead h2 { 
 				margin: 30px;
 			}
-			table { margin: 0px auto; }
+			.btn { margin:40px;}
+			table { margin: 20px auto; }
 			thead { font-weight: bold; text-transform: uppercase;}
 			td { padding: 10px 5px; }
-			.container { padding: 40px 0px; }
-			
+
+			.container { padding: 40px 0px 0px 0px; }
+
 			section h1 { margin-bottom: 40px; } 
 			
 			hr { margin: 60px; }
@@ -61,8 +63,8 @@
 
 		<section id='time'>
 		  <div class="container col-md-12 text-center">
-			<h1>Server Time: <span id='servertime'><script>document.write('Checking...')</script><noscript>Javascript required.</noscript></span></h1>
-			<script><!--
+			<h1><img src='../img/time.png'> <span id='servertime'><script>document.write('Checking...')</script><noscript>Javascript required.</noscript></span></h1>
+			<script>
 			setInterval( function() { 
 				$.ajax({ url: '[[scriptname]]?json_gettime=gettime', 
 						success: function(result) { 
@@ -78,38 +80,40 @@
 						}
 					  }) 
 				} , 2000);
-			--></script>
+			</script>
+			<p>Clock updated from server every 2 seconds with random "error" simulation.</p>
+			<hr>
 		  </div>
 		</section>
 		
 		<section id='examples'>
-		  <div class="container">
-			<div class="col-md-12 text-center">
-				<h1>File Downloads</h1>
+		  <div class="container col-md-12 text-center">
+			<h1>File Downloads</h1>
+			<p>Files listed below are found in the VbFcgi app /bin/downloads/ folder. Click a link to stream the file to your browser.</p>
+			[[file_list]]
+			
+			<hr>
+			
+			<h1>JSON Data Retrieval</h1>
+			<p>Clicking the button below will use AJAX to download a random table of data in JSON, and display it in an HTML table.</p>
+			
+			<a class='btn btn-primary btn-xl text-white' onclick="$.ajax({url: '[[scriptname]]?json_getdata=getdata', success: function(result) { 
+				var table;
 				
-				[[file_list]]
+				table = '<table><thead><tr>';
+				result.Fields.forEach( function(item, index) { table += '<td>' + item.Name + '</td>'; } );
+				table += '</tr></thead><tbody>';
+				result.RowsCols.forEach( function(item, index) { table += '<tr><td>' + item[0] + '</td><td>' + item[1] + '</td><td>' + item[2] + '</td><td>' + item[3] + '</td></tr>'; } );
 				
-				<hr>
+				table += '</tbody></table>';
 				
-				<h1>JSON Data Retrieval</h1>
-				<a class='btn btn-primary btn-xl text-white' onclick="$.ajax({url: '[[scriptname]]?json_getdata=getdata', success: function(result) { 
-					var table;
-					
-					table = '<table><thead><tr>';
-					result.Fields.forEach( function(item, index) { table += '<td>' + item.Name + '</td>'; } );
-					table += '</tr></thead><tbody>';
-					result.RowsCols.forEach( function(item, index) { table += '<tr><td>' + item[0] + '</td><td>' + item[1] + '</td><td>' + item[2] + '</td><td>' + item[3] + '</td></tr>'; } );
-					
-					table += '</tbody></table>';
-					
-					$('#table_data').html(table);
-					
-				} });">Request Table Data from Server</a>
-				<div class="col-md-6 offset-md-3 text-center"><div id='table_data'></div></div>
+				$('#table_data').html(table);
+				
+			} });">Request Table Data from Server</a>
+			<div class="col-md-6 offset-md-3 text-center"><div id='table_data'></div></div>
 
-				<hr>
+			<hr>
 				
-			</div>
 		  </div>
 		</section>
 		
