@@ -1,6 +1,8 @@
 # VbFcgi
 Create new web apps using your VB6 coding knowledge, or get your existing VB6 client/server apps on the web with this FCGI Host/Server Framework for Visual Basic 6 (VB6) ActiveX/COM DLL FCGI Applications!
 
+![VBFCGI Demo Screenshot](https://github.com/jpbro/VbFcgi/blob/master/docs/img/screenshot_appdemo.png)
+
 # Introduction
 VbFcgi is a framework that allows you to easily get VB6 code onto the web. It was developed against Nginx, but should work with any web server that implements the FCGI spec.
 
