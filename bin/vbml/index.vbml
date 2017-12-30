@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>VbFcgi Demo</title>
+	
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+		
+		<!-- JQuery Stuff -->
+		<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+		
+		<!-- Bootstrap stuff -->
+		<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta.3/css/bootstrap.min.css" integrity="sha384-Zug+QiDoJOrZ5t4lssLdxGhVrurbmBWopoEl+M6BdEfwnCJZtKxi1KgxUyJq13dy" crossorigin="anonymous">
+		
+		<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta.3/js/bootstrap.min.js" integrity="sha384-a5N7Y/aK3qNeh15eJKGWxsqtnX/wWdSZSKp+81YjTmS15nvnvxKHuzaWwXHDli+4" crossorigin="anonymous"></script>
+
+		<style>
+			body { font-family: "Trebuchet MS", "Tahoma", "Arial";}
+			
+			.masthead { 
+				background:url(../img/bg-pattern.png),#c07478;
+				background:url(../img/bg-pattern.png),-webkit-linear-gradient(to left,#c07478,#8c54a0);
+				background:url(../img/bg-pattern.png),linear-gradient(to left,#c07478,#8c54a0);
+				text-align:center;
+				padding: 30px;
+				color:white;
+			}
+			
+			.masthead h1 { 
+				margin-top: 60px;
+				color: white; 
+				font-weight: bold;
+			}
+			.masthead h2 { 
+				margin: 30px;
+			}
+			table { margin: 0px auto; }
+			thead { font-weight: bold; text-transform: uppercase;}
+			td { padding: 10px 5px; }
+			.container { padding: 40px 0px; }
+			
+			section h1 { margin-bottom: 40px; } 
+			
+			hr { margin: 60px; }
+		</style>
+	</head>
+
+	<body id='page-top'>
+		<!-- Header -->
+		<header class="masthead">
+		  <div class="container">
+			<div class="col-md-12">
+				<img src='../img/logo.png'>
+			</div>
+			<div class="col-md-12">
+			  <h1>VBFCGI Framework</h1>
+			  <h2>[[TITLE]]</h2>
+			</div>
+		  </div>
+		</header>
+
+		<section id='time'>
+		  <div class="container col-md-12 text-center">
+			<h1>Server Time: <span id='servertime'><script>document.write('Checking...')</script><noscript>Javascript required.</noscript></span></h1>
+			<script><!--
+			setInterval( function() { 
+				$.ajax({ url: '[[scriptname]]?json_gettime=gettime', 
+						success: function(result) { 
+							if ( result.status == 'ok' ) {
+								$('#servertime').text(result.time);
+							}
+							else if ( result.status == 'error' ) {
+								$('#servertime').text(result.error_message)
+							}
+							else { 
+								$('#servertime').text('Unexpected Status: ' + result.status); 
+							} 
+						}
+					  }) 
+				} , 2000);
+			--></script>
+		  </div>
+		</section>
+		
+		<section id='examples'>
+		  <div class="container">
+			<div class="col-md-12 text-center">
+				<h1>File Downloads</h1>
+				
+				[[file_list]]
+				
+				<hr>
+				
+				<h1>JSON Data Retrieval</h1>
+				<a class='btn btn-primary btn-xl text-white' onclick="$.ajax({url: '[[scriptname]]?json_getdata=getdata', success: function(result) { 
+					var table;
+					
+					table = '<table><thead><tr>';
+					result.Fields.forEach( function(item, index) { table += '<td>' + item.Name + '</td>'; } );
+					table += '</tr></thead><tbody>';
+					result.RowsCols.forEach( function(item, index) { table += '<tr><td>' + item[0] + '</td><td>' + item[1] + '</td><td>' + item[2] + '</td><td>' + item[3] + '</td></tr>'; } );
+					
+					table += '</tbody></table>';
+					
+					$('#table_data').html(table);
+					
+				} });">Request Table Data from Server</a>
+				<div class="col-md-6 offset-md-3 text-center"><div id='table_data'></div></div>
+
+				<hr>
+				
+			</div>
+		  </div>
+		</section>
+		
+		<section id='about'>
+		  <div class="container col-md-12 text-center">
+			<h1>About VBFCGI</h1>
+			<p>VBFCGI is programmed by Jason Peter Brown and is licensed under the open source MIT license.</p>
+			<p><a href='https://www.github.com/jpbro/VbFcgi/'>Learn more about VBFCGI at GitHub.</a></p>
+		  </div>
+		</section>
+	</body>
+</html>
