@@ -16,6 +16,8 @@
 *.ico binary
 *.gif binary
 *.ocx binary
+*.png binary
+*.pdf binary
 *.tlb binary
 *.ocx.bin binary
 *.ism binary
