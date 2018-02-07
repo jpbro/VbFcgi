@@ -155,6 +155,10 @@ Public Property Get IsFinishedReading() As Boolean
    End If
 End Property
 
+Private Function MethodName(ByVal p_MethodName As String) As String
+   MethodName = Join$(Array(App.EXEName, TypeName(Me), p_MethodName), ".")
+End Function
+   
 Public Sub OpenFile(ByVal p_FilePath As String, Optional ByVal p_ClientCachedEtag As String, Optional ByVal p_CalculateEtagByType As e_EtagType = etag_Sha256Hex, Optional ByVal p_ChunkSize As Long = 262144)
    Dim l_ClientCacheIsFresh As Boolean
    Dim l_EtagSourceData As String
@@ -164,50 +168,53 @@ Public Sub OpenFile(ByVal p_FilePath As String, Optional ByVal p_ClientCachedEta
    
    If IsReadyToFinish Then Err.Raise 5, , "File already open."
    
-   If Not libFso.FileExists(p_FilePath) Then Err.Raise 53, , "File not found at: " & p_FilePath
+   apiOutputDebugString "In " & MethodName("OpenFile")
+   
+   m_FileLen = libFso.FileLen(p_FilePath)
+   
+   If Not libFso.FileExists(p_FilePath) Then
+      apiOutputDebugString "File not found: " & p_FilePath
       
-   libFso.GetFileAttributesEx p_FilePath, m_FileLen, , l_LastWriteDate
+      Err.Raise 53, , "File not found at: " & p_FilePath
+   End If
+   
+   m_ETag = ""
       
    If p_CalculateEtagByType > etag_None Then
       ' Calculate ETag
             
-      ' Combine file path, length, and last modified date for hashing an Etag
-      ' TODO: This is not perfect - I'd rather get a file hash but vbRichClient5 doesn't
-      ' exposed an MD5/SHA methods for streamed file hashing.
-      ' I've sent Olaf an email about this so hopefully we'll have it soon.
-      
-      l_EtagSourceData = p_FilePath & vbTab & m_FileLen & vbTab & dateVbLocalDateTimeToIso8601Utc(l_LastWriteDate)
-      
+      apiOutputDebugString "Generating Etag by type #" & p_CalculateEtagByType
+            
       Select Case p_CalculateEtagByType
       Case etag_Md5Hex
-         m_ETag = libCrypt.MD5(l_EtagSourceData, True)
+         m_ETag = libFso.GetFileHash(p_FilePath, CALG_MD5)
          
       Case etag_Sha1Hex
-         m_ETag = libCrypt.SHA1(l_EtagSourceData, True)
+         m_ETag = libFso.GetFileHash(p_FilePath, CALG_SHA1)
       
       Case etag_Sha256Hex
-         m_ETag = libCrypt.SHA256(l_EtagSourceData, True)
+         m_ETag = libFso.GetFileHash(p_FilePath, CALG_SHA256)
       
       Case etag_Sha384Hex
-         m_ETag = libCrypt.SHA384(l_EtagSourceData, True)
+         m_ETag = libFso.GetFileHash(p_FilePath, CALG_SHA384)
       
       Case etag_Sha512Hex
-         m_ETag = libCrypt.SHA512(l_EtagSourceData, True)
+         m_ETag = libFso.GetFileHash(p_FilePath, CALG_SHA512)
       
       Case etag_Md5Base64
-         m_ETag = libCrypt.Base64Enc(libCrypt.MD5(l_EtagSourceData, False))
+         m_ETag = libCrypt.Base64Enc(libFso.GetFileHash(p_FilePath, CALG_MD5))
       
       Case etag_Sha1Base64
-         m_ETag = libCrypt.Base64Enc(libCrypt.SHA1(l_EtagSourceData, False))
+         m_ETag = libCrypt.Base64Enc(libFso.GetFileHash(p_FilePath, CALG_SHA1))
       
       Case etag_Sha256Base64
-         m_ETag = libCrypt.Base64Enc(libCrypt.SHA256(l_EtagSourceData, False))
+         m_ETag = libCrypt.Base64Enc(libFso.GetFileHash(p_FilePath, CALG_SHA256))
       
       Case etag_Sha384Base64
-         m_ETag = libCrypt.Base64Enc(libCrypt.SHA384(l_EtagSourceData, False))
+         m_ETag = libCrypt.Base64Enc(libFso.GetFileHash(p_FilePath, CALG_SHA384))
       
       Case etag_Sha512Base64
-         m_ETag = libCrypt.Base64Enc(libCrypt.SHA512(l_EtagSourceData, False))
+         m_ETag = libCrypt.Base64Enc(libFso.GetFileHash(p_FilePath, CALG_SHA512))
       
       Case Else
          ' Unsupported ETag type
@@ -215,24 +222,32 @@ Public Sub OpenFile(ByVal p_FilePath As String, Optional ByVal p_ClientCachedEta
          Err.Raise 5, , "Unsupported ETag type: " & p_CalculateEtagByType
       End Select
       
+      apiOutputDebugString "Calculated Etag: " & m_ETag
+      apiOutputDebugString "Client Etag: " & p_ClientCachedEtag
+      
       ' Compare client-side cached ETag to generate ETag.
       ' If they are the same, we should return 304 NOT MODIFIED instead of the file content
       ' This will improve performance and save on bandwidth
       If Not stringIsEmptyOrWhitespaceOnly(p_ClientCachedEtag) Then
-         p_ClientCachedEtag = p_ClientCachedEtag
-         
          m_NotModified = (p_ClientCachedEtag = m_ETag)
       End If
+      
+      apiOutputDebugString "Is file modified? " & Not m_NotModified
+      
    End If
    
    If Not m_NotModified Then
       ' Client cache is stale, doesn't exist, or we don't know the local file ETag
+      
+      apiOutputDebugString "File is modified (or first request). Opening stream."
       
       ' Open the file stream and prevent writes to it while we stream it out
       Set mo_Stream = libFso.OpenFileStream(p_FilePath, STRM_SHARE_DENY_WRITE, False)
             
       m_ChunkCount = mathIntDivideCurrency(m_FileLen, p_ChunkSize)
       m_FinalChunkSize = mathModCurrency(m_FileLen, p_ChunkSize)
+      
+      apiOutputDebugString "Chunk count: " & m_ChunkCount
       
       Select Case m_FinalChunkSize
       Case 0
@@ -273,6 +288,8 @@ ErrorHandler:
 End Sub
 
 Private Sub Class_Initialize()
+   apiOutputDebugString "Initializing " & App.EXEName & "." & TypeName(Me)
+   
    IBuilder_Reset
 End Sub
 
