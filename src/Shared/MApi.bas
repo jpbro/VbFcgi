@@ -107,9 +107,9 @@ Public Function apiExePath() As String
 End Function
 
 Public Sub apiOutputDebugString(ByVal p_Message As String)
-   'If envDebugMode Then
+   If envDebugMode Then
       OutputDebugString p_Message
-   'End If
+   End If
 End Sub
 
 Public Function apiGetCommandLine() As String
