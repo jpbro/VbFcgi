@@ -33,6 +33,12 @@ Public Function arrayIsDimmed(p_Array As Variant) As Boolean
    l_Lbound = LBound(p_Array)
    arrayIsDimmed = (Err.Number = 0)
    Err.Clear
+   
+   If arrayIsDimmed Then
+      If UBound(p_Array) < l_Lbound Then
+         arrayIsDimmed = False
+      End If
+   End If
    On Error GoTo 0
 End Function
 
