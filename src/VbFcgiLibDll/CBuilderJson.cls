@@ -75,59 +75,97 @@ Private Sub Class_Initialize()
    IBuilder_Reset
 End Sub
 
-Private Sub IJson_AddJsonObjectByKeyValuePairs(ParamArray pa_KeyAndValuePairs() As Variant)
+Private Sub IJson_AddJsonObjectByKeyValuePairs(ParamArray pa_ObjectNameAndKeyAndValuePairs() As Variant)
+   ' Add a series of key value pairs as an object.
+   
    Dim ii As Long
    Dim lo_Collection As vbRichClient5.cCollection
    Dim l_ArraySize As Long
+   Dim l_KeyName As String
+   Dim l_KeyValuePairOffset As Long
+   Dim l_AddingToJsonArray As Boolean
    
    If m_Finished Then Err.Raise 5, , "Already finished."
    
-   l_ArraySize = UBound(pa_KeyAndValuePairs) - LBound(pa_KeyAndValuePairs) + 1
+   l_ArraySize = UBound(pa_ObjectNameAndKeyAndValuePairs) - LBound(pa_ObjectNameAndKeyAndValuePairs) + 1
    If l_ArraySize < 1 Then Err.Raise 5, , "At least one key and value pair is required."
-   If l_ArraySize Mod 2 <> 0 Then Err.Raise 5, , "Key/value pairs must balanced (one key and one value for each pair)."
+   If l_ArraySize Mod 2 <> 0 Then
+      ' Use first passed string as key/name for object
+      l_KeyValuePairOffset = 1   ' Key/value pairs start a index 1
+      l_KeyName = pa_ObjectNameAndKeyAndValuePairs(0)
+   End If
    
    Set lo_Collection = libRc5Factory.C.JSONObject
    
-   For ii = LBound(pa_KeyAndValuePairs) To UBound(pa_KeyAndValuePairs) Step 2
-      lo_Collection.Add pa_KeyAndValuePairs(ii + 1), pa_KeyAndValuePairs(ii)
+   For ii = LBound(pa_ObjectNameAndKeyAndValuePairs) + l_KeyValuePairOffset To UBound(pa_ObjectNameAndKeyAndValuePairs) Step 2
+      lo_Collection.Add pa_ObjectNameAndKeyAndValuePairs(ii + 1), pa_ObjectNameAndKeyAndValuePairs(ii)
    Next ii
    
+   l_AddingToJsonArray = collectionIsJsonArray(mo_Collection)
+   
    If mo_Collection Is Nothing Then
+      apiOutputDebugString "Initialize JSON collection with collection content."
+      
       Set mo_Collection = libRc5Factory.C.JSONDecodeToCollection(lo_Collection.SerializeToJSONString)
       m_Initialized = True
+         
    Else
-      If mo_Collection.Count = 0 Then
-         Set mo_Collection = libRc5Factory.C.JSONDecodeToCollection(lo_Collection.SerializeToJSONString)
-      Else
+      If l_AddingToJsonArray Then
          mo_Collection.Add lo_Collection
+      
+      Else
+         ' Adding to existing JSON object collections requires a key name.
+         ' Make sure we have a key name.
+         If stringIsEmptyOrWhitespaceOnly(l_KeyName) Then
+            Err.Raise 5, , "Key name required when appending to JSON objects."
+         End If
+         
+         mo_Collection.Add lo_Collection, l_KeyName
       End If
+      
    End If
 End Sub
 
 Private Sub IJson_AddJsonArrayByValues(ParamArray pa_Values() As Variant)
    Dim ii As Long
-   Dim l_ArraySize As Long
    Dim lo_Collection As vbRichClient5.cCollection
+   Dim l_ArraySize As Long
+   Dim l_KeyName As String
+   Dim l_KeyValuePairOffset As Long
+   Dim l_AddingToJsonObject As Boolean ' When adding to an existing JSON object, the first passed parameter must be a string used as a key name for the array.
    
    If m_Finished Then Err.Raise 5, , "Already finished."
    
    l_ArraySize = UBound(pa_Values) - LBound(pa_Values) + 1
    If l_ArraySize < 1 Then Err.Raise 5, , "At least one value is required."
    
+   l_AddingToJsonObject = collectionIsJsonObject(mo_Collection)
+      
+   If l_AddingToJsonObject Then
+      ' Use first passed string as key/name for object
+      l_KeyValuePairOffset = 1   ' Key/value pairs start a index 1
+      l_KeyName = pa_Values(0)
+      
+      If stringIsEmptyOrWhitespaceOnly(l_KeyName) Then
+         Err.Raise 5, , "Key name required when adding arrays to existing JSON object collections!"
+      End If
+   End If
+   
    Set lo_Collection = libRc5Factory.C.JSONArray
    
-   For ii = LBound(pa_Values) To UBound(pa_Values)
+   For ii = LBound(pa_Values) + l_KeyValuePairOffset To UBound(pa_Values)
       lo_Collection.Add pa_Values(ii)
    Next ii
    
    If mo_Collection Is Nothing Then
       Set mo_Collection = libRc5Factory.C.JSONDecodeToCollection(lo_Collection.SerializeToJSONString)
       m_Initialized = True
+   
    Else
-      If mo_Collection.Count = 0 Then
-         Set mo_Collection = libRc5Factory.C.JSONDecodeToCollection(lo_Collection.SerializeToJSONString)
-      Else
+      If stringIsEmptyOrWhitespaceOnly(l_KeyName) Then
          mo_Collection.Add lo_Collection
+      Else
+         mo_Collection.Add lo_Collection, l_KeyName
       End If
    End If
 End Sub
@@ -310,6 +348,7 @@ Public Sub Initialize(p_JsonStringOrUtf8BytesOrVbArrayOrRc5CollectionOrArrayList
    ' - A VbRichClient5 cCollection object that has been created as a JSONObject or JSONArray
    ' - A non-byte Array of any type (it will be added to the collectionas a JSONArray)
    ' - Nothing object - an empty JSONObject collection will be created
+   ' - Empty array (e.g. .Initialize Array()) - an empty JSONArray collection will be created.
    
    Dim lo_ArrayList As vbRichClient5.cArrayList
    Dim la_Bytes() As Byte
@@ -466,6 +505,7 @@ Private Sub AddToJsonCollection(p_ArrayRc5ArrayListOrRc5Collection As Variant)
                Else
                   mo_Collection.Add p_ArrayRc5ArrayListOrRc5Collection(ii)
                End If
+            
             Else
                mo_Collection.Add p_ArrayRc5ArrayListOrRc5Collection(ii)
             End If

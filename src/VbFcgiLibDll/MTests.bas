@@ -72,13 +72,38 @@ End Sub
 
 Sub TestJson()
    Dim lo_Json As VbFcgiLib.CBuilderJson
+      
+   ' Initialize to empty JSON Object collection
+   Set lo_Json = New VbFcgiLib.CBuilderJson
+   lo_Json.Initialize Nothing
+   ' Add some data
+   lo_Json.IJsonObject.AddJsonObjectByKeyValuePairs "Info", "status", 200, "message", "OK"
+   lo_Json.IJsonObject.AddJsonObjectByKeyValuePairs "MyObject", "test", "test2"
+   lo_Json.IJsonObject.AddJsonArrayByValues "A", "B", "C"
    
-   Set lo_Json = New CBuilderJson
+   lo_Json.Finish contentencoding_RecommendedDefault
+
+   Debug.Print stringUtf8ToVb(lo_Json.Content)
    
-   lo_Json.Initialize Nothing ' Initialize to empty collection
-   ' Add some key & value pairs
+   ' Initialize to empty JSON Array collection
+   Set lo_Json = New VbFcgiLib.CBuilderJson
+   lo_Json.Initialize Array() ' .AddJsonArrayByValues ""
+   
    lo_Json.IJsonObject.AddJsonObjectByKeyValuePairs "status", 200, "message", "OK"
+   lo_Json.IJsonObject.AddJsonObjectByKeyValuePairs "test", "test2"
+   lo_Json.IJsonObject.AddJsonArrayByValues "A", "B", "C"
+      
+   lo_Json.Finish contentencoding_RecommendedDefault
+
+   Debug.Print stringUtf8ToVb(lo_Json.Content)
+
+   ' Initialize to empty JSON collection
+   Set lo_Json = New VbFcgiLib.CBuilderJson
+   ' Add some data
+   lo_Json.IJsonObject.AddJsonObjectByKeyValuePairs "status", 200, "message", "OK"
+
    lo_Json.Finish contentencoding_RecommendedDefault
 
    Debug.Print stringUtf8ToVb(lo_Json.Content)
 End Sub
+
