@@ -110,6 +110,8 @@ Private Sub IFcgiApp_ProcessRequest(po_Request As VbFcgiLib.CFcgiRequest, po_Res
 
 10       On Error GoTo ErrorHandler
 
+         Debug.Assert False   ' For test/simulation mode
+
          ' Make sure that FCGI parameters are complete built and the Downstream FCGI object has been set
          ' otherwise raise fcgierr_NotReadyForResponse
          ' Just a sanity check - this should never happen
@@ -151,7 +153,8 @@ Private Sub IFcgiApp_ProcessRequest(po_Request As VbFcgiLib.CFcgiRequest, po_Res
             apiOutputDebugString "Getting Template Builder helper."
             
 220         Set mo_Vbml = po_Response.Builders.Builder(builder_Template)
-
+            Set lo_IBuilder = mo_Vbml
+            
             l_Path = pathBin & "vbml" & l_Path
 
             apiOutputDebugString "Parsing file: " & l_Path
@@ -241,7 +244,8 @@ Private Sub IFcgiApp_ProcessRequest(po_Request As VbFcgiLib.CFcgiRequest, po_Res
                ' Check for JSON request
 590         ElseIf po_Request.Http.QueryParameters.Exists("json_gettime") Then
 600            Set lo_Json = po_Response.Builders.Builder(builder_Json)
-
+               Set lo_IBuilder = lo_Json
+               
 610            lo_Json.Initialize Nothing   ' Initialize to empty collection
                ' Add some key & value pairs
 620            If Int(Rnd * 10) = 1 Then
@@ -283,9 +287,10 @@ Private Sub IFcgiApp_ProcessRequest(po_Request As VbFcgiLib.CFcgiRequest, po_Res
 830            Set lo_Json = po_Response.Builders.Builder(builder_Json)
 
 840            lo_Json.Initialize lo_Rs.ToJSONUTF8
+               Set lo_IBuilder = lo_Json
 
 850            lo_Json.Finish
-
+               
 860         Else
                ' Build the HTML portion of the HTTP response
 
@@ -414,6 +419,7 @@ Private Sub IFcgiApp_ProcessRequest(po_Request As VbFcgiLib.CFcgiRequest, po_Res
 1620              .Finish contentencoding_UTF8
 1630           End With
 1640        End If
+
 1650     End Select
 
          ' Check if we remembered to call Finish() on the IBuilder object (if set)
@@ -424,6 +430,11 @@ Private Sub IFcgiApp_ProcessRequest(po_Request As VbFcgiLib.CFcgiRequest, po_Res
                ' content encoding of the IBuilder helper class.
 1680           lo_IBuilder.Finish
 1690        End If
+
+            If envRunningInIde Then
+               ' For debugging purposes, print the content that will be sent downstream
+               Debug.Print stringUtf8ToVb(lo_IBuilder.Content)
+            End If
 1700     End If
 
 1710     Cleanup
