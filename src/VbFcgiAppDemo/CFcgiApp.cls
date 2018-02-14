@@ -148,9 +148,21 @@ Private Sub IFcgiApp_ProcessRequest(po_Request As VbFcgiLib.CFcgiRequest, po_Res
 210      Select Case LCase$(stringRemoveWhitespace(libFso.GetFileExtension(l_Path)))
          Case "vbml"
             ' Request is for a parsed VBML file
+            apiOutputDebugString "Getting Template Builder helper."
+            
 220         Set mo_Vbml = po_Response.Builders.Builder(builder_Template)
-230         mo_Vbml.ParseFile pathBin & "vbml" & l_Path
+
+            l_Path = pathBin & "vbml" & l_Path
+
+            apiOutputDebugString "Parsing file: " & l_Path
+
+230         mo_Vbml.ParseFile l_Path
+
+            apiOutputDebugString "Parsed file: " & l_Path
+
 240         mo_Vbml.Finish contentencoding_UTF8
+
+            apiOutputDebugString "Finished parsing VBML template."
 
 250      Case Else
             ' Check for file download request
@@ -424,6 +436,8 @@ ErrorHandler:
 
 1730     l_ErrNum = Err.Number
 1740     l_ErrDesc = Err.Description & ", Line #" & Erl
+
+         apiOutputDebugString "Error in " & App.EXEName & " #" & l_ErrNum & " " & l_ErrDesc
 
 1750     Cleanup
 
