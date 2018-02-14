@@ -63,6 +63,7 @@ Sub Main()
    Dim l_LastShutdownCheck As Double
 
    Dim l_SpawnMode As Boolean
+   Dim l_ShutdownMode As Boolean
    
    Dim la_Failures() As Long
    
@@ -101,8 +102,10 @@ Sub Main()
          Case mc_ParamShutdown
             ' Shutdown command detected, ignore all other commands and run the process shutdown process
 
+            l_ShutdownMode = True
+
             If ShutdownRunningListeners Then
-               apiOutputDebugString "Running listeners shutdown."
+               apiOutputDebugString "Listeners have been shutdown."
             Else
                apiOutputDebugString "There was a problem trying to shutdown running listeners."
             End If
@@ -148,7 +151,7 @@ Sub Main()
       Next ii
    End If
 
-   If Not MutexExists(ShutdownMutexName) Then
+   If Not (l_ShutdownMode Or MutexExists(ShutdownMutexName)) Then
       If l_Host = "" Then
          ' Host is missing, use default host name
          l_Host = mc_DefaultHostName
