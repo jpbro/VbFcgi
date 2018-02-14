@@ -250,7 +250,6 @@ Private Sub IFcgiApp_ProcessRequest(po_Request As VbFcgiLib.CFcgiRequest, po_Res
 670            Set lo_Json = po_Response.Builders.Builder(builder_Json)
 680            Set lo_IBuilder = lo_Json
 
-690            lo_Json.Initialize Nothing   ' Initialize to empty collection
                ' Add some key & value pairs
 700            If Int(Rnd * 10) = 1 Then
                   ' Simulate random error
