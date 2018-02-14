@@ -205,12 +205,21 @@ Public Function fcgiSendStdErr(po_TcpServer As vbRichClient5.cTCPServer, ByVal p
    Dim l_RequestId As Integer
    Dim l_ContentLen As Integer
    
+   On Error GoTo ErrorHandler
+   
    apiOutputDebugString "In fcgiSendStdErr."
    
    If po_TcpServer.ConnectionCount = 0 Then
-      apiOutputDebugString "No connections found in fcgiSendStdErr. Short circuiting."
+      apiOutputDebugString "No connections found in fcgiSendStdErr. Short-circuiting."
       Exit Function
    End If
+   
+   If p_Socket = 0 Then
+      apiOutputDebugString "No socket # available in fcgiSendStdErr. Short-circuiting."
+      Exit Function
+   End If
+   
+   apiOutputDebugString "Sending error #" & p_ErrorNumber & " '" & p_ErrorDescription & "' in fcgiSendStdErr."
    
    la_Content = libCrypt.VBStringToUTF8(p_ErrorDescription)
    
@@ -221,7 +230,7 @@ Public Function fcgiSendStdErr(po_TcpServer As vbRichClient5.cTCPServer, ByVal p
    l_ContentLen = apiNtohs(arraySize(la_Content))
    
    ' Build STDERR record
-   la_Record(0) = 1
+   la_Record(0) = 1  ' Version
    la_Record(1) = FCGI_STDERR
    apiCopyMemory la_Record(2), l_RequestId, 2
    apiCopyMemory la_Record(4), l_ContentLen, 2
@@ -232,20 +241,35 @@ Public Function fcgiSendStdErr(po_TcpServer As vbRichClient5.cTCPServer, ByVal p
       If po_TcpServer.SendData(p_Socket, VarPtr(la_Content(0)), UBound(la_Content) + 1) Then
          If l_Padding > 0 Then
             ReDim la_Content(l_Padding - 1)
-            po_TcpServer.SendData p_Socket, VarPtr(la_Content(0)), l_Padding
+            If Not po_TcpServer.SendData(p_Socket, VarPtr(la_Content(0)), l_Padding) Then
+               apiOutputDebugString "Failed to send payload #3 (record padding) in fcgiSendStdErr."
+            End If
          End If
+      
+         ' Send empty STDERR record to close it
+         la_Record(4) = 0
+         la_Record(5) = 0
+         la_Record(6) = 0
+         la_Record(7) = 0
+      
+         If Not po_TcpServer.SendData(p_Socket, VarPtr(la_Record(0)), UBound(la_Record) + 1) Then
+            apiOutputDebugString "Failed to send payload #4 (record close) in fcgiSendStdErr."
+         End If
+         
+      Else
+         apiOutputDebugString "Failed to send payload #2 (record content) in fcgiSendStdErr."
       End If
       
-      ' Send empty STDERR record to close it
-      la_Record(4) = 0
-      la_Record(5) = 0
-      la_Record(6) = 0
-      la_Record(7) = 0
-   
-      po_TcpServer.SendData p_Socket, VarPtr(la_Record(0)), UBound(la_Record) + 1
+   Else
+      apiOutputDebugString "Failed to send payload #1 (record header) in fcgiSendStdErr."
    End If
 
    apiOutputDebugString "Leaving fcgiSendStdErr."
+
+   Exit Function
+   
+ErrorHandler:
+   apiOutputDebugString "*** Error #" & Err.Number & " " & Err.Description & " in fcgiSendStdErr!"
 End Function
 
 Public Sub fcgiSendEndRequest(po_TcpServer As vbRichClient5.cTCPServer, ByVal p_Socket As Long, ByVal p_RequestId As Integer, ByVal p_ApplicationStatus As Long, ByVal p_ProtocolStatus As Byte)
@@ -261,7 +285,7 @@ Public Sub fcgiSendEndRequest(po_TcpServer As vbRichClient5.cTCPServer, ByVal p_
    End If
    ReDim la_Record(15)
    
-   la_Record(0) = 1
+   la_Record(0) = 1  ' Version
    la_Record(1) = FCGI_END_REQUEST
 
    p_RequestId = apiNtohs(p_RequestId)
