@@ -72,7 +72,7 @@ End Sub
 
 Sub TestJson()
    Dim lo_Json As VbFcgiLib.CBuilderJson
-      
+         
    ' Initialize to empty JSON Object collection
    Set lo_Json = New VbFcgiLib.CBuilderJson
    lo_Json.Initialize Nothing
@@ -107,3 +107,9 @@ Sub TestJson()
    Debug.Print stringUtf8ToVb(lo_Json.Content)
 End Sub
 
+Public Sub TestSimulator()
+   Dim lo_App As New VbFcgiLib.CSimulatorFcgiApp
+   Dim lo_Sim As New VbFcgiLib.CSimulator
+   
+   lo_Sim.SimulateRequest "http://localhost/vbfcgiapp.fgci?a=b&c=d", lo_App
+End Sub

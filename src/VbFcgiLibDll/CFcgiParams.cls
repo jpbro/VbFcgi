@@ -85,6 +85,7 @@ Public Enum e_StandardParameters ' Enum of standard/common FCGI parameters for e
    stdparam_HttpCacheControl
    stdparam_HttpCookie
    stdparam_HttpIfNoneMatch
+   stdparam_RequestScheme
 End Enum
 
 Private mo_Params As vbRichClient5.cCollection  ' Parameters collection (key-value pairs)
@@ -168,6 +169,9 @@ Private Function EnumParameterKey(ByVal p_ParameterKeyEnum As e_StandardParamete
    
    Case stdparam_RequestMethod
       EnumParameterKey = "REQUEST_METHOD"
+   
+   Case stdparam_RequestScheme
+      EnumParameterKey = "REQUEST_SCHEME"
    
    Case stdparam_ContentType
       EnumParameterKey = "CONTENT_TYPE"

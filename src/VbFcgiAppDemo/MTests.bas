@@ -11,3 +11,10 @@ Public Sub TestForm()
    'Unload lo_Form
 End Sub
 
+Public Sub TestSimulator()
+   Dim lo_Sim As VbFcgiLib.CSimulator
+   
+   Set lo_Sim = New VbFcgiLib.CSimulator
+   
+   lo_Sim.SimulateRequest "http://localhost/vbfcgiapp.fcgi?json_getdata=1", New VbFcgiApp.CFcgiApp
+End Sub
