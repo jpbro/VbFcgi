@@ -32,6 +32,8 @@ Public Function envDebugMode() As Boolean
       s_DebugMode = libRc5Factory.C.FSO.FileExists(pathBin & "VbFcgi.debug")
       s_LastChecked = libRc5Factory.C.HPTimer
    End If
+
+   envDebugMode = s_DebugMode
 End Function
 
 Public Function envRunningInIde() As Boolean
