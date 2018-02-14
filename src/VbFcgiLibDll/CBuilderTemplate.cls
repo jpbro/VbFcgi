@@ -177,6 +177,10 @@ Public Sub ParseFile(ByVal p_FilePathOrContent As String, Optional ByVal p_CodeP
    Dim l_NewContentEnd As Long
    Dim lo_StringTemplate As VbFcgiLib.CWebStringTemplate
    
+   On Error GoTo ErrorHandler
+   
+   apiOutputDebugString "In " & App.EXEName & "." & TypeName(Me)
+   
    ' 0 = Recommended default code page, assume UTF-8
    If p_CodePage = 0 Then p_CodePage = CP_UTF8
    
@@ -199,11 +203,12 @@ Public Sub ParseFile(ByVal p_FilePathOrContent As String, Optional ByVal p_CodeP
          Select Case Mid$(p_FilePathOrContent, 1, 1)
          Case "A" To "Z", "a" To "z", "\"
             ' Searching for a missing file...send 404 status downstream
+            apiOutputDebugString "File is not found at " & p_FilePathOrContent & ". Return 404."
+            
             mo_HttpHeader.AddOrReplace "Status", 404
             
             m_Content = "Not Found"
-            Me.Finish contentencoding_UTF8
-            
+                        
             Exit Sub
          
          End Select
@@ -345,6 +350,13 @@ Public Sub ParseFile(ByVal p_FilePathOrContent As String, Optional ByVal p_CodeP
          Exit Do
       End If
    Loop
+   
+   Exit Sub
+   
+ErrorHandler:
+   apiOutputDebugString "Error in ParseFile: " & Err.Number & " " & Err.Description
+
+   Err.Raise Err.Number, Err.Source, Err.Description, Err.HelpFile, Err.HelpContext
 End Sub
 
 Public Sub SetTagIdentifiers(ByVal p_OpenTag As String, ByVal p_CloseTag As String)
