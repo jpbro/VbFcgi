@@ -77,6 +77,9 @@ Private Function HasPathlessHttpQueryParam() As Boolean
    ElseIf mo_HttpParams.Exists("imagebyindex") Then
       HasPathlessHttpQueryParam = True
    
+   ElseIf mo_HttpParams.Exists("showparams") Then
+      HasPathlessHttpQueryParam = True
+   
    Else
       For ii = 0 To mo_HttpParams.KeyCount - 1
          If LCase$(Left$(mo_HttpParams.KeyByIndex(ii), Len("json_"))) = "json_" Then
@@ -101,6 +104,7 @@ Private Sub IFcgiApp_ProcessRequest(po_Request As VbFcgiLib.CFcgiRequest, po_Res
          Dim l_SubTitleExampleUrl As String
          Dim l_VisitCount As Long
          Dim l_TagIndex As Long
+         Dim l_TagIndex2 As Long
          Dim l_Filename As String
          Dim l_Path As String
          Dim lo_Cnn As vbRichClient5.cConnection
@@ -290,6 +294,54 @@ Private Sub IFcgiApp_ProcessRequest(po_Request As VbFcgiLib.CFcgiRequest, po_Res
                Set lo_IBuilder = lo_Json
 
 850            lo_Json.Finish
+
+            ElseIf mo_HttpParams.Exists("showparams") Then
+               ' Initialize the HTML builder/helper
+               Set lo_Html = po_Response.Builders.Builder(builder_Html)
+               
+               lo_Html.AppendDocType htmldoctype_Html5
+               
+               With lo_Html
+                .OpenTags "html"
+                  l_TagIndex = .OpenTags("head")
+
+                  .AppendWithTag "Request Parameters", "title"
+
+                  .CloseOpenedTagsToIndex l_TagIndex  ' Close <head> tag
+
+                  ' Build BODY
+                  .OpenTags "body"
+   
+                  .AppendWithTag "FCGI Params", "h1"
+                  
+                  l_TagIndex = .OpenTags("table")
+                  
+                  For ii = 0 To po_Request.Fcgi.Params.Count - 1
+                     l_TagIndex2 = .OpenTags("tr")
+                     
+                     .AppendWithTag po_Request.Fcgi.Params.KeyByIndex(ii), "td"
+                     .AppendWithTag po_Request.Fcgi.Params.ValueByIndex(ii), "td"
+                     
+                     .CloseOpenedTagsToIndex l_TagIndex2
+                  Next ii
+                  
+                  .CloseOpenedTagsToIndex l_TagIndex
+               
+                  .OpenTags "table"
+               
+                  For ii = 0 To po_Request.Http.QueryParameters.KeyCount - 1
+                     l_TagIndex = .OpenTags("tr")
+                     
+                     .AppendWithTag po_Request.Http.QueryParameters.KeyByIndex(ii), "td"
+                     .AppendWithTag po_Request.Http.QueryParameters.ValuesByIndex(ii).ValueByIndex(0), "td"
+                     
+                     .CloseOpenedTagsToIndex l_TagIndex
+                  Next ii
+                  
+                  .CloseAllOpenedTags
+               
+                  .Finish
+               End With
                
 860         Else
                ' Build the HTML portion of the HTTP response
