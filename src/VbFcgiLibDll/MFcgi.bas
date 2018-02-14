@@ -83,6 +83,11 @@ Public Function fcgiFlushStdOut(po_TcpServer As vbRichClient5.cTCPServer, ByVal 
       Exit Function
    End If
    
+   If p_Socket = 0 Then
+      apiOutputDebugString "No socket # available in fcgiFlushStdOut. Short-circuiting."
+      Exit Function
+   End If
+   
    ReDim la_Record(7)
    
    la_Record(0) = 1  ' Version
@@ -136,7 +141,6 @@ Public Function fcgiFlushStdOut(po_TcpServer As vbRichClient5.cTCPServer, ByVal 
                         End If
                         
                      Else
-                        apiOutputDebugString "No padding to flush (not an error)."
                         fcgiFlushStdOut = True
                      End If
                      
@@ -172,6 +176,7 @@ Public Function fcgiFlushStdOut(po_TcpServer As vbRichClient5.cTCPServer, ByVal 
          
       Else
          apiOutputDebugString "STDOUT has no unflushed content."
+         fcgiFlushStdOut = True
       End If
    End If
    
@@ -189,9 +194,13 @@ Public Function fcgiFlushStdOut(po_TcpServer As vbRichClient5.cTCPServer, ByVal 
       Else
          ' Failure
          apiOutputDebugString "Could not send closing STDOUT record."
+         
+         fcgiFlushStdOut = True  ' We flushed something so return true
       End If
-      
-      fcgiFlushStdOut = True  ' We flushed something so return true
+   End If
+
+   If Not fcgiFlushStdOut Then
+      Err.Raise vbObjectError, , "Could not flush STDOUT."
    End If
 
    apiOutputDebugString "Leaving fcgiFlushStdOut."
@@ -283,6 +292,12 @@ Public Sub fcgiSendEndRequest(po_TcpServer As vbRichClient5.cTCPServer, ByVal p_
       apiOutputDebugString "No connections found in fcgiSendEndRequest. Short circuiting."
       Exit Sub
    End If
+   
+   If p_Socket = 0 Then
+      apiOutputDebugString "No socket # available in fcgiSendEndRequest. Short-circuiting."
+      Exit Sub
+   End If
+   
    ReDim la_Record(15)
    
    la_Record(0) = 1  ' Version

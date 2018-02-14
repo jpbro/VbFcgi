@@ -177,6 +177,7 @@ Private Sub mo_ActiveDownstream_SendFinished(ByVal p_RequestId As Long)
          apiOutputDebugString "STDOUT could not be flushed in finished event for Request #" & lo_Downstream.Id
          
          lo_Downstream.State = fcgireqstate_Error
+         
       End If
       
       RemoveRequestNoErr lo_Downstream
@@ -206,7 +207,7 @@ Private Sub mo_ActiveDownstream_SendBytes(ByVal p_RequestId As Long, pa_Bytes() 
       apiOutputDebugString "Request object not found for ID#" & p_RequestId
    Else
       lo_Downstream.StdOut.AppendContent pa_Bytes
-   
+      
       If Not fcgiFlushStdOut(mo_TcpServer, lo_Downstream.SocketNumber, lo_Downstream.Id, lo_Downstream.StdOut, False) Then
          apiOutputDebugString "STDOUT could not be flushed in WriteBytes event for Request #" & lo_Downstream.Id
          
@@ -561,15 +562,28 @@ Private Sub mo_ResponseTimer_Timer()
 210                              fcgiSendEndRequest mo_TcpServer, lo_Downstream.SocketNumber, lo_Downstream.Id, 0, 0
 220                           End If
 230                        End If
+250                        l_ProcessedRequest = True
+
+                        Else
+                           apiOutputDebugString "Failed to flush data in fcgiFlushStdOut call in mo_ResponseTimer_Timer."
+                           
+                           lo_Downstream.State = fcgireqstate_Error
+                                                   
+                           l_ProcessedRequest = False
 240                     End If
                         
-250                     l_ProcessedRequest = True
                         
-260                     If lo_Downstream.StdOut.State = fcgistdoutstate_Built Then
+260                     Select Case lo_Downstream.StdOut.State
+                        Case fcgistdoutstate_Built
 270                        If Not lo_Downstream.StdOut.HasUnflushedContent Then
 280                           RemoveRequestNoErr lo_Downstream
 290                        End If
-300                     End If
+
+                        Case fcgireqstate_Error
+                           RemoveRequestNoErr lo_Downstream
+                           l_ProcessedRequest = False
+                        
+300                     End Select
                         
 310                  Case Else
                         ' STDOUT is not finished being built yet
