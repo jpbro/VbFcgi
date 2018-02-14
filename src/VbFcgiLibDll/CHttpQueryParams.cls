@@ -121,7 +121,7 @@ Public Sub ParseQueryParams(po_FcgiParams As CFcgiParams, po_FcgiStdin As CFcgiS
    Dim l_QueryString As String
    Dim la_QueryPairs() As String
    Dim la_QueryPair() As String
-   Dim lo_Values As CHttpQueryParamValues
+   Dim lo_Values As VbFcgiLib.CHttpQueryParamValues
    
    Dim ii As Long
    Dim jj As Long
@@ -202,7 +202,7 @@ Public Sub ParseQueryParams(po_FcgiParams As CFcgiParams, po_FcgiStdin As CFcgiS
          Next jj
          
          If lo_Values Is Nothing Then
-            Set lo_Values = New CHttpQueryParamValues
+            Set lo_Values = New VbFcgiLib.CHttpQueryParamValues
          End If
          
          lo_Values.Add la_QueryPair(1)
