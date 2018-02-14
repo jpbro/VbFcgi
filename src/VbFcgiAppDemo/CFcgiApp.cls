@@ -251,260 +251,260 @@ Private Sub IFcgiApp_ProcessRequest(po_Request As VbFcgiLib.CFcgiRequest, po_Res
 680            Set lo_IBuilder = lo_Json
 
                ' Add some key & value pairs
-700            If Int(Rnd * 10) = 1 Then
+690            If Int(Rnd * 10) = 1 Then
                   ' Simulate random error
-710               lo_Json.IJsonObject.AddJsonObjectByKeyValuePairs "status", "error", "error_message", "Simulated Error!"
-720            Else
+700               lo_Json.IJsonObject.AddJsonObjectByKeyValuePairs "status", "error", "error_message", "Simulated Error!"
+710            Else
                   ' Return OK status and current server-local datetime
-730               lo_Json.IJsonObject.AddJsonObjectByKeyValuePairs "status", "ok", "time", Now
-740            End If
+720               lo_Json.IJsonObject.AddJsonObjectByKeyValuePairs "status", "ok", "time", Now
+730            End If
 
-750            lo_Json.Finish
+740            lo_Json.Finish
 
-760         ElseIf mo_HttpParams.Exists("json_getdata") Then
+750         ElseIf mo_HttpParams.Exists("json_getdata") Then
                ' Simulate getting data from a database
 
                ' Create an in-memory database
-770            Set lo_Cnn = libRc5Factory.C.Connection(, DBCreateInMemory)
-780            lo_Cnn.Execute "CREATE TABLE mytable (code TEXT, value1 INTEGER, value2 INTEGER, value3 REAL)"
+760            Set lo_Cnn = libRc5Factory.C.Connection(, DBCreateInMemory)
+770            lo_Cnn.Execute "CREATE TABLE mytable (code TEXT, value1 INTEGER, value2 INTEGER, value3 REAL)"
 
                ' Build random table data
-790            Set lo_Cmd = lo_Cnn.CreateCommand("INSERT INTO mytable (code, value1, value2, value3) VALUES (?,?,?,?)")
-800            For ii = 0 To 25
-810               With lo_Cmd
-820                  .SetAllParamsNull
+780            Set lo_Cmd = lo_Cnn.CreateCommand("INSERT INTO mytable (code, value1, value2, value3) VALUES (?,?,?,?)")
+790            For ii = 0 To 25
+800               With lo_Cmd
+810                  .SetAllParamsNull
 
-830                  .SetText 1, Chr$(65 + ii)
-840                  .SetInt32 2, Int(Rnd * 100)
-850                  .SetInt32 3, Int(Rnd * 100)
-860                  .SetDouble 4, Rnd
+820                  .SetText 1, Chr$(65 + ii)
+830                  .SetInt32 2, Int(Rnd * 100)
+840                  .SetInt32 3, Int(Rnd * 100)
+850                  .SetDouble 4, Rnd
 
-870                  .Execute
-880               End With
-890            Next ii
+860                  .Execute
+870               End With
+880            Next ii
 
                ' Get data into recordset
-900            Set lo_Rs = lo_Cnn.OpenRecordset("SELECT * FROM mytable")
+890            Set lo_Rs = lo_Cnn.OpenRecordset("SELECT * FROM mytable")
 
                ' Build JSON response
-910            Set lo_Json = po_Response.Builders.Builder(builder_Json)
+900            Set lo_Json = po_Response.Builders.Builder(builder_Json)
 
-920            lo_Json.Initialize lo_Rs.ToJSONUTF8
-930            Set lo_IBuilder = lo_Json
+910            lo_Json.Initialize lo_Rs.ToJSONUTF8
+920            Set lo_IBuilder = lo_Json
 
-940            lo_Json.Finish
+930            lo_Json.Finish
 
-950         ElseIf mo_HttpParams.Exists("showparams") Then
+940         ElseIf mo_HttpParams.Exists("showparams") Then
                ' Initialize the HTML builder/helper
-960            Set lo_Html = po_Response.Builders.Builder(builder_Html)
+950            Set lo_Html = po_Response.Builders.Builder(builder_Html)
 
-970            lo_Html.AppendDocType htmldoctype_Html5
+960            lo_Html.AppendDocType htmldoctype_Html5
 
-980            With lo_Html
-990               .OpenTags "html"
-1000              l_TagIndex = .OpenTags("head")
+970            With lo_Html
+980               .OpenTags "html"
+990               l_TagIndex = .OpenTags("head")
 
-1010              .AppendWithTag "Request Parameters", "title"
+1000              .AppendWithTag "Request Parameters", "title"
 
-1020              .CloseOpenedTagsToIndex l_TagIndex  ' Close <head> tag
+1010              .CloseOpenedTagsToIndex l_TagIndex  ' Close <head> tag
 
                   ' Build BODY
-1030              .OpenTags "body"
+1020              .OpenTags "body"
 
-1040              .AppendWithTag "FCGI Params", "h1"
+1030              .AppendWithTag "FCGI Params", "h1"
 
-1050              l_TagIndex = .OpenTags("table")
+1040              l_TagIndex = .OpenTags("table")
 
-1060              For ii = 0 To po_Request.Fcgi.Params.Count - 1
-1070                 l_TagIndex2 = .OpenTags("tr")
+1050              For ii = 0 To po_Request.Fcgi.Params.Count - 1
+1060                 l_TagIndex2 = .OpenTags("tr")
 
-1080                 .AppendWithTag po_Request.Fcgi.Params.KeyByIndex(ii), "td"
-1090                 .AppendWithTag po_Request.Fcgi.Params.ValueByIndex(ii), "td"
+1070                 .AppendWithTag po_Request.Fcgi.Params.KeyByIndex(ii), "td"
+1080                 .AppendWithTag po_Request.Fcgi.Params.ValueByIndex(ii), "td"
 
-1100                 .CloseOpenedTagsToIndex l_TagIndex2
-1110              Next ii
+1090                 .CloseOpenedTagsToIndex l_TagIndex2
+1100              Next ii
 
-1120              .CloseOpenedTagsToIndex l_TagIndex
+1110              .CloseOpenedTagsToIndex l_TagIndex
 
-1130              .OpenTags "table"
+1120              .OpenTags "table"
 
-1140              For ii = 0 To po_Request.Http.QueryParameters.KeyCount - 1
-1150                 l_TagIndex = .OpenTags("tr")
+1130              For ii = 0 To po_Request.Http.QueryParameters.KeyCount - 1
+1140                 l_TagIndex = .OpenTags("tr")
 
-1160                 .AppendWithTag po_Request.Http.QueryParameters.KeyByIndex(ii), "td"
-1170                 .AppendWithTag po_Request.Http.QueryParameters.ValuesByIndex(ii).ValueByIndex(0), "td"
+1150                 .AppendWithTag po_Request.Http.QueryParameters.KeyByIndex(ii), "td"
+1160                 .AppendWithTag po_Request.Http.QueryParameters.ValuesByIndex(ii).ValueByIndex(0), "td"
 
-1180                 .CloseOpenedTagsToIndex l_TagIndex
-1190              Next ii
+1170                 .CloseOpenedTagsToIndex l_TagIndex
+1180              Next ii
 
-1200              .CloseAllOpenedTags
+1190              .CloseAllOpenedTags
 
-1210              .Finish
-1220           End With
+1200              .Finish
+1210           End With
 
-1230        Else
+1220        Else
                ' Build the HTML portion of the HTTP response
 
                ' Initialize the HTML builder/helper
-1240           Set lo_Html = po_Response.Builders.Builder(builder_Html)
+1230           Set lo_Html = po_Response.Builders.Builder(builder_Html)
 
-1250           With lo_Html
-1260              .AppendDocType htmldoctype_Html5
+1240           With lo_Html
+1250              .AppendDocType htmldoctype_Html5
 
-1270              .OpenTags "html"
+1260              .OpenTags "html"
 
-1280              l_TagIndex = .OpenTags("head")
+1270              l_TagIndex = .OpenTags("head")
 
-1290              If stringIsEmptyOrWhitespaceOnly(m_Title) Then
-1300                 m_Title = "vbFcgi Demo App"
-1310                 l_SubTitle = "Pass a ""title"" query to change the title of this page."
-1320                 l_SubTitleExampleUrl = "http://" & m_HttpHost & po_Request.Fcgi.Params.ValueByEnum(stdparam_ScriptName) & "?title=Greetings from planet earth!"
-1330              End If
+1280              If stringIsEmptyOrWhitespaceOnly(m_Title) Then
+1290                 m_Title = "vbFcgi Demo App"
+1300                 l_SubTitle = "Pass a ""title"" query to change the title of this page."
+1310                 l_SubTitleExampleUrl = "http://" & m_HttpHost & po_Request.Fcgi.Params.ValueByEnum(stdparam_ScriptName) & "?title=Greetings from planet earth!"
+1320              End If
 
-1340              .AppendWithTag m_Title, "title"
+1330              .AppendWithTag m_Title, "title"
 
-1350              .CloseOpenedTagsToIndex l_TagIndex  ' Close <head> tag
+1340              .CloseOpenedTagsToIndex l_TagIndex  ' Close <head> tag
 
                   ' Build BODY
-1360              .OpenTags "body"
+1350              .OpenTags "body"
 
-1370              .AppendWithTag m_Title, "h1"
+1360              .AppendWithTag m_Title, "h1"
 
-1380              If Not stringIsEmptyOrWhitespaceOnly(l_SubTitle) Then
-1390                 .AppendWithTag l_SubTitle, "h2"
+1370              If Not stringIsEmptyOrWhitespaceOnly(l_SubTitle) Then
+1380                 .AppendWithTag l_SubTitle, "h2"
 
-1400                 l_TagIndex = .OpenTags("p")
-1410                 .Append "Example: "
-1420                 .OpenHyperlinkTag l_SubTitleExampleUrl
-1430                 .Append .EncodeHtmlEntities(l_SubTitleExampleUrl)
-1440                 .CloseOpenedTagsToIndex l_TagIndex   ' Close up to p tag
-1450              End If
+1390                 l_TagIndex = .OpenTags("p")
+1400                 .Append "Example: "
+1410                 .OpenHyperlinkTag l_SubTitleExampleUrl
+1420                 .Append .EncodeHtmlEntities(l_SubTitleExampleUrl)
+1430                 .CloseOpenedTagsToIndex l_TagIndex   ' Close up to p tag
+1440              End If
 
-1460              l_TagIndex = .OpenTags("p")
-1470              .OpenHyperlinkTag "http://" & m_HttpHost & po_Request.Fcgi.Params.ValueByEnum(stdparam_ScriptName) & "/template_demo.vbml"
-1480              .Append "Click to visit a dynamically altered template page."
-1490              .CloseOpenedTagsToIndex l_TagIndex   ' Close up to the p tag
+1450              l_TagIndex = .OpenTags("p")
+1460              .OpenHyperlinkTag "http://" & m_HttpHost & po_Request.Fcgi.Params.ValueByEnum(stdparam_ScriptName) & "/template_demo.vbml"
+1470              .Append "Click to visit a dynamically altered template page."
+1480              .CloseOpenedTagsToIndex l_TagIndex   ' Close up to the p tag
 
-1500              l_TagIndex = .OpenTags("p")
-1510              .OpenHyperlinkTag "http://" & m_HttpHost & po_Request.Fcgi.Params.ValueByEnum(stdparam_ScriptName) & "?getjson=getjson"
-1520              .Append "Click to get JSON data."
-1530              .CloseOpenedTagsToIndex l_TagIndex   ' Close up to the p tag
+1490              l_TagIndex = .OpenTags("p")
+1500              .OpenHyperlinkTag "http://" & m_HttpHost & po_Request.Fcgi.Params.ValueByEnum(stdparam_ScriptName) & "?getjson=getjson"
+1510              .Append "Click to get JSON data."
+1520              .CloseOpenedTagsToIndex l_TagIndex   ' Close up to the p tag
 
-1540              .Append "<hr>"
+1530              .Append "<hr>"
 
-1550              l_TagIndex = .OpenTags("p", "b")
-1560              .Append "<a href='https://www.github.com/jpbro/VbFcgi'>Learn more about VbFcgi on GitHub.</a>"
-1570              .CloseOpenedTagsToIndex l_TagIndex  ' Close B and P tags
+1540              l_TagIndex = .OpenTags("p", "b")
+1550              .Append "<a href='https://www.github.com/jpbro/VbFcgi'>Learn more about VbFcgi on GitHub.</a>"
+1560              .CloseOpenedTagsToIndex l_TagIndex  ' Close B and P tags
 
-1580              .Append "<hr>"
+1570              .Append "<hr>"
 
                   ' *** START DEMONSTRATION OF COOKIES
-1590              l_TagIndex = .OpenTagWithAttributes("p", , , "color: orange; font-weight: bold;")
-1600              If po_Request.Http.Cookies.Exists("visits") Then
-1610                 On Error Resume Next
-1620                 l_VisitCount = po_Request.Http.Cookies.CookieByKey("visits").Value
-1630                 On Error GoTo ErrorHandler
+1580              l_TagIndex = .OpenTagWithAttributes("p", , , "color: orange; font-weight: bold;")
+1590              If po_Request.Http.Cookies.Exists("visits") Then
+1600                 On Error Resume Next
+1610                 l_VisitCount = po_Request.Http.Cookies.CookieByKey("visits").Value
+1620                 On Error GoTo ErrorHandler
 
-1640                 If l_VisitCount = 0 Then
+1630                 If l_VisitCount = 0 Then
                         ' Bad cookie value!
-1650                    .Append "Hey! Have you been mucking about with your cookies?"
-1660                 Else
+1640                    .Append "Hey! Have you been mucking about with your cookies?"
+1650                 Else
                         ' Display number of visits
-1670                    .Append4 "You have previously visited this page ", l_VisitCount, " time", IIf(l_VisitCount <> 1, "s.", ".")
-1680                 End If
-1690              Else
+1660                    .Append4 "You have previously visited this page ", l_VisitCount, " time", IIf(l_VisitCount <> 1, "s.", ".")
+1670                 End If
+1680              Else
                      ' First visit
-1700                 .Append "This is your first visit, pleased to meet you!"
-1710              End If
-1720              .CloseOpenedTagsToIndex l_TagIndex  ' Close P tag
+1690                 .Append "This is your first visit, pleased to meet you!"
+1700              End If
+1710              .CloseOpenedTagsToIndex l_TagIndex  ' Close P tag
 
                   ' Increment "Visits" cookie
-1730              po_Request.Http.Cookies.AddOrReplaceCookie "visits", l_VisitCount + 1
+1720              po_Request.Http.Cookies.AddOrReplaceCookie "visits", l_VisitCount + 1
                   ' *** END DEMONSTRATION OF COOKIES
 
                   ' Add download links to test CBuilderFile class
                   Dim l_DownloadUrl As String
 
-1740              l_DownloadUrl = "http://" & m_HttpHost & po_Request.Fcgi.Params.ValueByEnum(stdparam_ScriptName) & "?download="
+1730              l_DownloadUrl = "http://" & m_HttpHost & po_Request.Fcgi.Params.ValueByEnum(stdparam_ScriptName) & "?download="
 
-1750              l_TagIndex = .OpenTags("p")
-1760              .OpenHyperlinkTag l_DownloadUrl & "test.pdf", "_blank"
-1770              .Append "Download a PDF"
-1780              .CloseOpenedTagsToIndex l_TagIndex   ' Close P tag
+1740              l_TagIndex = .OpenTags("p")
+1750              .OpenHyperlinkTag l_DownloadUrl & "test.pdf", "_blank"
+1760              .Append "Download a PDF"
+1770              .CloseOpenedTagsToIndex l_TagIndex   ' Close P tag
 
-1790              l_TagIndex = .OpenTags("p")
-1800              .OpenHyperlinkTag l_DownloadUrl & "test.png", "_blank"
-1810              .Append "Download a PNG"
-1820              .CloseOpenedTagsToIndex l_TagIndex   ' Close P tag
+1780              l_TagIndex = .OpenTags("p")
+1790              .OpenHyperlinkTag l_DownloadUrl & "test.png", "_blank"
+1800              .Append "Download a PNG"
+1810              .CloseOpenedTagsToIndex l_TagIndex   ' Close P tag
 
                   ' End of download test
 
-1830              .Append4 "<p>", "The current date & time on the server is: ", Now, "</p>"
-1840              .AppendWithTag "VbFcgi is " & ChrW$(&HAAA&) & ChrW$(&HE01&) & ChrW$(&H671&) & ChrW$(&H188&) & ChrW$(&H47B&) & ChrW$(&H257&) & ChrW$(&HFEC9&) & " capable via UTF-8!", "p"
+1820              .Append4 "<p>", "The current date & time on the server is: ", Now, "</p>"
+1830              .AppendWithTag "VbFcgi is " & ChrW$(&HAAA&) & ChrW$(&HE01&) & ChrW$(&H671&) & ChrW$(&H188&) & ChrW$(&H47B&) & ChrW$(&H257&) & ChrW$(&HFEC9&) & " capable via UTF-8!", "p"
 
                   ' Build FCGI Parameters table
-1850              .AppendWithTag "FCGI Parameters received from downstream Webserver:", "h2"
-1860              .OpenTags "table"
-1870              For ii = 1 To mo_FcgiParams.Count - 1
-1880                 .OpenTags "tr"
-1890                 .AppendWithTag mo_FcgiParams.KeyByIndex(ii), "td"
-1900                 .AppendWithTag mo_FcgiParams.ValueByIndex(ii), "td"
-1910                 .CloseLastOpenedTag  ' Close tr tag
-1920              Next ii
-1930              .CloseLastOpenedTag  ' Close table tag
+1840              .AppendWithTag "FCGI Parameters received from downstream Webserver:", "h2"
+1850              .OpenTags "table"
+1860              For ii = 1 To mo_FcgiParams.Count - 1
+1870                 .OpenTags "tr"
+1880                 .AppendWithTag mo_FcgiParams.KeyByIndex(ii), "td"
+1890                 .AppendWithTag mo_FcgiParams.ValueByIndex(ii), "td"
+1900                 .CloseLastOpenedTag  ' Close tr tag
+1910              Next ii
+1920              .CloseLastOpenedTag  ' Close table tag
 
                   ' Build STDIN info
-1940              .AppendWithTag "FCGI STDIN Content Length: " & mo_FcgiStdin.ContentLength, "p"
+1930              .AppendWithTag "FCGI STDIN Content Length: " & mo_FcgiStdin.ContentLength, "p"
 
                   ' Build response time info
-1950              .AppendWithTag "Response Build Time: " & Format$(libRc5Factory.C.HPTimer - l_StartedBuildAt, "0.00000") & " seconds", "p"
+1940              .AppendWithTag "Response Build Time: " & Format$(libRc5Factory.C.HPTimer - l_StartedBuildAt, "0.00000") & " seconds", "p"
 
                   ' Close all open tags in reverse order
-1960              .CloseAllOpenedTags
+1950              .CloseAllOpenedTags
 
                   ' Add cookies to HTTP header
-1970              Set lo_IBuilder = lo_Html
-1980              lo_IBuilder.HttpHeader.Append po_Request.Http.Cookies.CookieHeaders
+1960              Set lo_IBuilder = lo_Html
+1970              lo_IBuilder.HttpHeader.Append po_Request.Http.Cookies.CookieHeaders
 
                   ' Finish building HTML, encode as UTF-8 and write it back downstream
-1990              .Finish contentencoding_UTF8
-2000           End With
-2010        End If
+1980              .Finish contentencoding_UTF8
+1990           End With
+2000        End If
 
-2020     End Select
+2010     End Select
 
          ' Check if we remembered to call Finish() on the IBuilder object (if set)
-2030     If Not lo_IBuilder Is Nothing Then
-2040        If Not lo_IBuilder.IsFinished Then
+2020     If Not lo_IBuilder Is Nothing Then
+2030        If Not lo_IBuilder.IsFinished Then
                ' We forgot to call Finish()!
                ' Call Finish with the recommended default
                ' content encoding of the IBuilder helper class.
-2050           lo_IBuilder.Finish
-2060        End If
+2040           lo_IBuilder.Finish
+2050        End If
 
-2070        If envRunningInIde Then
+2060        If envRunningInIde Then
                ' For debugging purposes, print the content that will be sent downstream
-2080           Debug.Print stringUtf8ToVb(lo_IBuilder.Content)
-2090        End If
-2100     End If
+2070           Debug.Print stringUtf8ToVb(lo_IBuilder.Content)
+2080        End If
+2090     End If
 
-2110     Cleanup
+2100     Cleanup
 
-2120     Exit Sub
+2110     Exit Sub
 
 ErrorHandler:
          Dim l_ErrNum As Long
          Dim l_ErrDesc As String
 
-2130     l_ErrNum = Err.Number
-2140     l_ErrDesc = Err.Description & ", Line #" & Erl
+2120     l_ErrNum = Err.Number
+2130     l_ErrDesc = Err.Description & ", Line #" & Erl
 
-2150     apiOutputDebugString "Error in " & App.EXEName & " #" & l_ErrNum & " " & l_ErrDesc
+2140     apiOutputDebugString "Error in " & App.EXEName & " #" & l_ErrNum & " " & l_ErrDesc
 
-2160     Cleanup
+2150     Cleanup
 
          ' Send error information downstream
-2170     po_Response.Error l_ErrNum, l_ErrDesc
+2160     po_Response.Error l_ErrNum, l_ErrDesc
 End Sub
 
 Private Sub Cleanup()
