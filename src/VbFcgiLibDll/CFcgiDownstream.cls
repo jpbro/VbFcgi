@@ -78,6 +78,8 @@ Public Sub Initialize(ByVal p_RequestId As Integer, ByVal p_SocketNumber As Long
 End Sub
 
 Public Sub SetError(ByVal p_ErrorNumber As Long, ByVal p_ErrorDescription As String)
+   apiOutputDebugString "In SetError. Error #" & p_ErrorNumber & " " & p_ErrorDescription
+   
    m_ErrorNumber = p_ErrorNumber
    m_ErrorDescription = p_ErrorDescription
    

@@ -155,5 +155,6 @@ Private Sub mo_EventCollection_EventRaised(p_Key As String, p_EventName As Strin
       
    Case Else
       Debug.Assert False
+      apiOutputDebugString "Unhandled event in EventCollection member: " & p_EventName & ". Key: " & p_Key
    End Select
 End Sub

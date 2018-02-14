@@ -539,6 +539,8 @@ Private Sub mo_ResponseTimer_Timer()
 100         For Each lo_Downstream In mo_ActiveRequests
 110            If lo_Downstream.State = fcgireqstate_Error Then
                   ' Error occurred, send STDERR
+                  apiOutputDebugString "Sending error downstream. Error #" & lo_Downstream.ErrorNumber & " " & lo_Downstream.ErrorDescription
+                  
 120               SendStdErrByRequestNoErr lo_Downstream
 130               l_ProcessedRequest = True
                   
