@@ -98,11 +98,13 @@ End Sub
 Public Sub Finished()
    ' Call this method when your FCGI app is finished responding to the web server.
    
-   m_Finished = True
-   
-   apiOutputDebugString "Request #" & m_RequestId & " is finished."
-   
-   RaiseEvent SendFinished(m_RequestId)
+   If Not m_Finished Then
+      m_Finished = True
+      
+      apiOutputDebugString "Request #" & m_RequestId & " is finished."
+      
+      RaiseEvent SendFinished(m_RequestId)
+   End If
 End Sub
 
 Public Property Get IsFinished() As Boolean
