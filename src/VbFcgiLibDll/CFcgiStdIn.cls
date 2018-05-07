@@ -133,7 +133,7 @@ Public Function Content() As Byte()
       mo_StdIn.SetPosition l_CurPos ' Reset stream position
       
    Else
-      la_Bytes = Array()   ' Return empty array. LBound = 0, UBound = -1
+      la_Bytes = vbNullString   ' Return empty array. LBound = 0, UBound = -1
    End If
 
    Content = la_Bytes
