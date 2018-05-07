@@ -105,6 +105,10 @@ Public Sub Finished()
    RaiseEvent SendFinished(m_RequestId)
 End Sub
 
+Public Property Get IsFinished() As Boolean
+   IsFinished = m_Finished
+End Property
+
 Private Sub mo_Builders_Finished()
    Dim lo_Builder As VbFcgiLib.IBuilder
    Dim lo_File As VbFcgiLib.CBuilderFile
