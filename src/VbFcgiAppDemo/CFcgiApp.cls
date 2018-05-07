@@ -80,6 +80,9 @@ Private Function HasPathlessHttpQueryParam() As Boolean
    ElseIf mo_HttpParams.Exists("showparams") Then
       HasPathlessHttpQueryParam = True
    
+   ElseIf mo_HttpParams.Exists("getbytes") Then
+      HasPathlessHttpQueryParam = True
+   
    Else
       For ii = 0 To mo_HttpParams.KeyCount - 1
          If LCase$(Left$(mo_HttpParams.KeyByIndex(ii), Len("json_"))) = "json_" Then
@@ -149,6 +152,23 @@ Private Sub IFcgiApp_ProcessRequest(po_Request As VbFcgiLib.CFcgiRequest, po_Res
 200         m_Title = ""
 210      End If
          ' *** END DEMONSTRATION OF HTTP QUERY PARAMETER HANDLING
+
+         Dim l_ContentType As String
+         
+         l_ContentType = po_Request.Fcgi.Params.ValueByEnum(stdparam_ContentType)
+         If Not stringIsEmptyOrWhitespaceOnly(l_ContentType) Then
+            If LCase$(Split(l_ContentType, ";")(0)) = "application/json" Then
+               ' JSON body content received
+               Set lo_Json = po_Response.Builders.Builder(builder_Json)
+               
+               lo_Json.Initialize po_Request.Fcgi.Stdin.Content
+               Set lo_IBuilder = lo_Json
+               
+               lo_Json.Finish
+               
+               GoTo Cleanup
+            End If
+         End If
 
          ' Check for VBML template request
 220      Select Case LCase$(stringRemoveWhitespace(libFso.GetFileExtension(l_Path)))
@@ -294,6 +314,20 @@ Private Sub IFcgiApp_ProcessRequest(po_Request As VbFcgiLib.CFcgiRequest, po_Res
 
 930            lo_Json.Finish
 
+            ' Check for binary byte request
+            ElseIf mo_HttpParams.Exists("getbytes") Then
+               Dim la_Content() As Byte
+               
+               Set lo_Rs = libRc5Factory.C.Recordset
+               
+               la_Content = lo_Rs.Content
+               
+               po_Response.WriteBytes stringVbToUtf8("Content-Length: " & arraySize(la_Content) & vbNewLine)
+               po_Response.WriteBytes stringVbToUtf8("Content-Type: application/octet-stream" & vbNewLine)
+               po_Response.WriteBytes stringVbToUtf8("Content-Type: application/octet-stream" & vbNewLine)
+               po_Response.WriteBytes stringVbToUtf8(vbNewLine)
+               po_Response.WriteBytes la_Content
+               
 940         ElseIf mo_HttpParams.Exists("showparams") Then
                ' Initialize the HTML builder/helper
 950            Set lo_Html = po_Response.Builders.Builder(builder_Html)
@@ -473,6 +507,9 @@ Private Sub IFcgiApp_ProcessRequest(po_Request As VbFcgiLib.CFcgiRequest, po_Res
 
 2010     End Select
 
+Cleanup:
+         On Error GoTo ErrorHandler
+         
          ' Check if we remembered to call Finish() on the IBuilder object (if set)
 2020     If Not lo_IBuilder Is Nothing Then
 2030        If Not lo_IBuilder.IsFinished Then
