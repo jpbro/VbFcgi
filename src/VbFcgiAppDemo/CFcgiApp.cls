@@ -327,6 +327,7 @@ Private Sub IFcgiApp_ProcessRequest(po_Request As VbFcgiLib.CFcgiRequest, po_Res
                po_Response.WriteBytes stringVbToUtf8("Content-Type: application/octet-stream" & vbNewLine)
                po_Response.WriteBytes stringVbToUtf8(vbNewLine)
                po_Response.WriteBytes la_Content
+               po_Response.Finished
                
 940         ElseIf mo_HttpParams.Exists("showparams") Then
                ' Initialize the HTML builder/helper
