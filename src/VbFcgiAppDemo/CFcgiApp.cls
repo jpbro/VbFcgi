@@ -64,8 +64,19 @@ Private mo_FormImages As VbFcgiApp.frmImages    ' Legacy app form
 Private m_Title As String
 Private m_HttpHost As String
 
+Private mo_SharedDatabaseConnection As vbRichClient5.cConnection
+
 Private Sub Class_Initialize()
    Randomize
+   
+   ' Set up an in-memory database connection that will be shared amongst all instances of this app
+   ' that are running under the same vbFcgiHost parent process
+   ' Using SQLite with a file URI, you can share volatile dynamic data between instances of your VbFcgiApps
+   ' See: https://www.sqlite.org/uri.html
+   Set mo_SharedDatabaseConnection = libRc5Factory.C.Connection("file:MySharedDatabase?mode=memory&cache=shared", DBCreateInMemory)
+   ' NOTE: When creating the database table, the "IF NOT EXISTS" directive is important!
+   ' The first DLL thread will create the table, and subsequent DLL threads will skip table creation
+   mo_SharedDatabaseConnection.Execute "CREATE TABLE IF NOT EXISTS inmemtest (key TEXT PRIMARY KEY NOT NULL, value INTEGER)"
 End Sub
 
 Private Function HasPathlessHttpQueryParam() As Boolean
@@ -81,6 +92,9 @@ Private Function HasPathlessHttpQueryParam() As Boolean
       HasPathlessHttpQueryParam = True
    
    ElseIf mo_HttpParams.Exists("getbytes") Then
+      HasPathlessHttpQueryParam = True
+   
+   ElseIf mo_HttpParams.Exists("pokedb") Then
       HasPathlessHttpQueryParam = True
    
    Else
@@ -206,7 +220,34 @@ Private Sub IFcgiApp_ProcessRequest(po_Request As VbFcgiLib.CFcgiRequest, po_Res
 
 390            lo_File.OpenFile pathBin & "downloads\" & l_Filename, po_Request.Fcgi.Params.ValueByEnum(stdparam_HttpIfNoneMatch)
 
-               ' Check for image request from VB6 form
+            ' Check for In-memory shared DB query
+            ElseIf po_Request.Http.QueryParameters.Exists("pokedb") Then
+               ' We have a request to "poke" the thread-shared in-memory DB
+               ' We will update a counter in a our "inmemtest" table and then return a recordset in JSON
+               ' If you run multiple browsers and send the pokedb request, you will see each browser instance
+               ' gets the next sequentially incremented number returned in the JSON RS data
+               apiOutputDebugString "In Poke DB test."
+                          
+               ' SQLite "UPSERT" statemnet below requires SQLite 3.24.0 +, so make sure your vbRichClient5 library is up-to-date!
+               ' We will now insert a key called "test" with a value of 1, or if the "test" key already exists, then we will increment the value.
+               mo_SharedDatabaseConnection.Execute "INSERT INTO inmemtest (key, value) VALUES('test',1)" & _
+                                                   " ON CONFLICT(key) DO UPDATE SET value=value+1;"
+                                                   
+               ' Get the test key & value in a recordset
+               Set lo_Rs = mo_SharedDatabaseConnection.OpenRecordset("SELECT key, value FROM inmemtest WHERE key='test'")
+               
+               ' Build and return RS in JSON
+               Set lo_Json = po_Response.Builders.Builder(builder_Json)
+   
+               lo_Json.Initialize lo_Rs.ToJSONUTF8
+               Set lo_IBuilder = lo_Json
+   
+               lo_Json.Finish
+               
+               libRc5Factory.C.SleepEx libCrypt.CreateRandomNumber(3000) + 1000  ' Wait a random time between 1 and 4 seconds.
+                                                                                 ' This makes it easier
+            
+            ' Check for image request from VB6 form
 400         ElseIf po_Request.Http.QueryParameters.Exists("imagebyindex") Then
                ' Get image by VB6 form list view index
                ' We must make sure NOT to show the form!
