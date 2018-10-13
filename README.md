@@ -6,6 +6,9 @@ Code your web application back-end in VB6! VbFcgi makes it easy to leverage your
 # Introduction
 VbFcgi is an FCGI Host/Server Framework for Visual Basic 6 (VB6) ActiveX/COM DLL Web Applications. It was developed against Nginx, but should work with any web server that implements the FCGI spec.
 
+# Process Diagram
+<img src='https://github.com/jpbro/VbFcgi/blob/master/docs/img/diagram_process.png' width=800 title='VBFCGI Process Diagram'>
+
 # Included Binaries
 There are 3 main components of the VbFcgi framework:
 1. **VbFcgiLib.dll** - This is the main framework library that includes all of the code for listening and responding to FCGI requests from the web server, as well as parsing out records for FCGI parameters, HTTP cookies, etc... This file should be included with every distribution of your FCGI application.
