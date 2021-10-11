@@ -173,6 +173,7 @@ Private Sub mo_ActiveDownstream_SendFinished(ByVal p_RequestId As Long)
       If fcgiFlushStdOut(mo_TcpServer, lo_Downstream.SocketNumber, lo_Downstream.Id, lo_Downstream.StdOut, True) Then
          ' Flushed - send FCGI_END_REQUEST
          fcgiSendEndRequest mo_TcpServer, lo_Downstream.SocketNumber, lo_Downstream.Id, 0, 0
+         
       Else
          apiOutputDebugString "STDOUT could not be flushed in finished event for Request #" & lo_Downstream.Id
          
@@ -524,15 +525,24 @@ Private Sub mo_ResponseTimer_Timer()
             
 10       On Error GoTo ErrorHandler
 
-20       If s_Busy Then Exit Sub
+20       If s_Busy Then
+            apiOutputDebugString "mo_ResponseTimer is busy, short-circuiting..."
+            Exit Sub
+         End If
 30       s_Busy = True
 
 40       mo_ResponseTimer.Enabled = False
 
 50       apiOutputDebugString "In mo_ResponseTimer_Timer."
 
-60       If mo_ActiveRequests Is Nothing Then GoTo Cleanup
-70       If mo_ActiveRequests.Count = 0 Then GoTo Cleanup
+60       If mo_ActiveRequests Is Nothing Then
+            apiOutputDebugString "No active requests object, short-circuiting."
+            GoTo Cleanup
+         End If
+70       If mo_ActiveRequests.Count = 0 Then
+            apiOutputDebugString "No active requests, short-circuiting."
+            GoTo Cleanup
+         End If
 
 80       l_StartedLoopAt = libRc5Factory.C.HPTimer
          
@@ -662,7 +672,7 @@ Private Sub mo_ResponseTimer_Timer()
                Case Is < 0, Is > mo_ResponseTimer.Interval * 2
                   ' Short-circuit subsequent responses if time for
                   ' previous response building/sending has gone over our threshold
-810               apiOutputDebugString "Response timer exceeded allotted time. Will come resume later."
+810               apiOutputDebugString "Response timer exceeded alloted time. Will come resume later."
                   
 820               Exit For
 830            End Select
@@ -673,6 +683,9 @@ Private Sub mo_ResponseTimer_Timer()
             
             ' Keep looping if we have any active requests and we have exceed our response loop threshold
 860      Loop While l_ProcessedRequest And (l_LoopTime < mo_ResponseTimer.Interval * 2) And (mo_ActiveRequests.Count > 0)
+         
+         apiOutputDebugString "Processed Request: " & l_ProcessedRequest
+         apiOutputDebugString "Loop time: " & l_LoopTime
          
 870      l_ErrNumber = 0
 880      l_ErrDesc = ""
@@ -685,6 +698,7 @@ Cleanup:
             ' Handle error
             ' If the error is fcgierr_ResponseBuilderNotReady, then we'll try to generate the response again later
             ' Otherwise, we'll kill the request
+            apiOutputDebugString "Error encountered! #" & l_ErrNumber & " " & l_ErrDesc
             
 910         If l_ErrNumber = fcgierr_NotReadyForResponse Then
                ' Conditions were not met for the response to be built, try again later
@@ -716,9 +730,13 @@ Cleanup:
          ' Restart timer if we have any remaining active responses
 1080     If Not mo_ActiveRequests Is Nothing Then
 1090        If mo_ActiveRequests.Count > 0 Then
+               apiOutputDebugString "Re-enabling mo_ResponseTimer. Request count: " & mo_ActiveRequests.Count
+               
 1100           mo_ResponseTimer.Enabled = True
 1110        End If
 1120     End If
+         
+         apiOutputDebugString "Out mo_ResponseTimer."
          
 1130     Exit Sub
 
