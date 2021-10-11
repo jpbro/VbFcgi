@@ -149,11 +149,7 @@ Public Function Content(Optional ByVal p_Encoding As VbFcgiLib.e_ContentEncoding
    
    Case contentencoding_UTF8
       ' Return in UTF-8 encoding
-      Content = lo_HttpHeader.ToUTF8
-      
-   Case contentencoding_UTF16_LE
-      ' Return in ISO-8859-1 encoding
-      Content = stringVbToIso88591(lo_HttpHeader.ToString)
+      Content = lo_HttpHeader.ToUtf8
       
    Case contentencoding_ISO8859_1
       ' Return in ISO-8859-1 encoding
